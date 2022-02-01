@@ -80,7 +80,8 @@ fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
             }
             PathKind::Directory => std::fs::create_dir_all(path)?,
         }
-    }.pure()
+    }
+    .pure()
 }
 
 fn create_tree(directory: String, lines: Lines<impl BufRead>, options: UntreeOptions) -> IO {
@@ -90,8 +91,7 @@ fn create_tree(directory: String, lines: Lines<impl BufRead>, options: UntreeOpt
     for result in lines {
         let line = result?;
         if line == "" {
-            // We're done
-            return ().pure()
+            break;
         }
 
         let (depth, filename) = get_entry(line.as_ref());
