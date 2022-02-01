@@ -1,22 +1,22 @@
 use std::env;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Error as ioError, Lines, Stdin};
+use std::io::{self, BufRead, BufReader, Lines, Stdin};
 use std::path::Path;
 
-fn main() {
+type IO = Result<(), io::Error>;
+type IOResult<T> = Result<T, io::Error>;
+
+fn main() -> IO {
     let args: Vec<String> = env::args().collect();
 
     match args.len() {
         1 => process_lines("(standard input)", read_stdin()),
         2 => match args[1].as_ref() {
             "-" => process_lines("(standard input)", read_stdin()),
-            "-h" | "--help" => print_help(args),
-            filename => match read_lines(filename) {
-                Ok(lines) => process_lines(filename, lines),
-                Err(err) => println!("Unable to open '{filename}': {err}"),
-            },
+            "-h" | "--help" => Ok(print_help(args)),
+            filename => process_lines(filename, read_lines(filename)?),
         },
-        _ => print_help(args),
+        _ => Ok(print_help(args)),
     }
 }
 
@@ -41,18 +41,15 @@ fn read_stdin() -> Lines<BufReader<Stdin>> {
 
 // The output is wrapped in a Result to allow matching on errors
 // Returns an Iterator to the Reader of the lines of the file.
-fn read_lines<P: AsRef<Path>>(filename: P) -> Result<Lines<BufReader<File>>, ioError>
-{
-    File::open(filename).map(|file| io::BufReader::new(file).lines())
+fn read_lines(file: impl AsRef<Path>) -> IOResult<Lines<BufReader<File>>> {
+    File::open(file).map(|file| io::BufReader::new(file).lines())
 }
 
-fn process_lines(filename: &str, lines: Lines<impl BufRead>) {
+fn process_lines(filename: &str, lines: Lines<impl BufRead>) -> IO {
     println!("      │ File: {filename}");
     println!("──────┼────────────────────────────────");
-    for (i, result) in lines.enumerate() {
-        match result {
-            Ok(line) => println!("{i:5} │ {line}"),
-            Err(err) => println!("Error: {err}"),
-        }
-    }
+    Ok(for (i, result) in lines.enumerate() {
+        let line = result?;
+        println!("{i:5} │ {line}");
+    })
 }
