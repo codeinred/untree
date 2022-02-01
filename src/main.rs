@@ -42,20 +42,24 @@ fn read_lines(file: impl AsRef<Path>) -> IOResult<Lines<BufReader<File>>> {
 /**
  * Returns an entry in the tree, where the first result is the depth, and the second result is the file
  */
-fn get_entry(entry: &str) -> (i32, &str) {
-    match either!(
-        entry.strip_prefix("    "),
-        entry.strip_prefix("└── "),
-        entry.strip_prefix("├── "),
-        entry.strip_prefix("│   "),
-        // Some iplementations of tree use a non-breaking space here (ua0)
-        entry.strip_prefix("│\u{a0}\u{a0} ")
-    ) {
-        Some(suffix) => {
-            let (i, result) = get_entry(suffix);
-            (i + 1, result)
+fn get_entry(mut entry: &str) -> (i32, &str) {
+    let mut depth = 0;
+
+    loop {
+        match either!(
+            entry.strip_prefix("    "),
+            entry.strip_prefix("└── "),
+            entry.strip_prefix("├── "),
+            entry.strip_prefix("│   "),
+            // Some iplementations of tree use a non-breaking space here (ua0)
+            entry.strip_prefix("│\u{a0}\u{a0} ")
+        ) {
+            Some(suffix) => {
+                entry = suffix;
+                depth += 1;
+            }
+            None => return (depth, entry),
         }
-        None => (0, entry),
     }
 }
 
