@@ -24,8 +24,17 @@ fn main() -> IO {
     };
 
     match args.tree_file.as_ref().map(String::as_str) {
-        None | Some("-") => create_tree(directory, read_stdin(), options),
-        Some(filename) => create_tree(directory, read_lines(filename)?, options),
+        None | Some("-") => {
+            eprintln!(
+                "{}",
+                format!("Reading tree from standard input").red().bold()
+            );
+            create_tree(directory, read_stdin(), options)
+        }
+        Some(filename) => {
+            eprintln!("{}", format!("Reading tree from {filename}").red().bold());
+            create_tree(directory, read_lines(filename)?, options)
+        }
     }
 }
 
