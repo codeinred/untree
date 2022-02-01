@@ -2,8 +2,10 @@
 name = "untree"
 version = "0.1.0"
 edition = "2021"
+authors = ["Alecto Irene Perez"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 colored = "2"
+clap = {version = "3.0.13", features = ["derive"] }
