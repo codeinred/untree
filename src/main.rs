@@ -1,7 +1,7 @@
 use std::env;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::vec::Vec;
 
 use colored::*;
@@ -70,8 +70,9 @@ fn get_entry(entry: &str) -> (i32, &str) {
 }
 
 fn process_lines(_filename: &str, lines: Lines<impl BufRead>) -> IO {
-    // let mut pathStack = vec!("");
+    let mut path = PathBuf::new();
 
+    let mut old_depth = -1;
     for result in lines {
         let line = result?;
         if line == "" {
@@ -80,10 +81,21 @@ fn process_lines(_filename: &str, lines: Lines<impl BufRead>) -> IO {
         }
 
         let (depth, filename) = get_entry(line.as_ref());
+        if depth <= old_depth {
+            File::create(Path::new(&path))?;
+            for _ in depth..old_depth {
+                path.pop();
+            }
+            path.set_file_name(filename);
+        } else {
+            std::fs::create_dir_all(Path::new(&path))?;
+            path.push(filename);
+        }
+        old_depth = depth;
         println!(
             "depth={}, filename={}",
             depth.to_string().bold(),
-            filename.blue().bold()
+            path.to_str().unwrap().blue().bold()
         );
     }
 
