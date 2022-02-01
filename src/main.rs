@@ -42,9 +42,9 @@ fn read_stdin() -> io::Lines<io::BufReader<Stdin>> {
 // The output is wrapped in a Result to allow matching on errors
 // Returns an Iterator to the Reader of the lines of the file.
 fn read_lines<P: AsRef<Path>>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>> {
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
+    File::open(filename).map(|file| io::BufReader::new(file).lines())
 }
+
 
 fn process_lines<T: io::BufRead>(filename: &str, lines: io::Lines<T>) {
     println!("      │ File: {filename}");
