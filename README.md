@@ -75,6 +75,17 @@ input to other programs.
 [stack-overflow-question]:
   https://stackoverflow.com/questions/70933172/how-to-write-gitignore-so-that-it-only-includes-yaml-files-and-some-specific-fi
 
+## User testimonials
+
+When asked about _untree_, my friend said:
+
+> I retroactively want that for my time trying to get Conan to work. It woulda
+> made certain things just a little less painful.
+
+— _some guy[^1]_
+
+[^1]: _He asked to be referred to as "some guy"_
+
 ## Comments, feedback, or contributions are welcome!
 
 I'm in the progress of learning rust, so any feedback you have is greatly
