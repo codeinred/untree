@@ -1,60 +1,14 @@
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
 use std::path::{Path, PathBuf};
-
+use clap::Parser;
 use colored::*;
 
 mod macros;
-use macros::either;
+mod traits;
+mod types;
 
-use clap::Parser;
-
-#[derive(Clone, Copy)]
-struct UntreeOptions {
-    dry_run: bool,
-    verbose: bool,
-}
-
-trait Pure<T> {
-    fn pure(self) -> T;
-}
-impl<T> Pure<Option<T>> for T {
-    fn pure(self) -> Option<T> {
-        Some(self)
-    }
-}
-impl<T> Pure<Result<T, io::Error>> for T {
-    fn pure(self) -> Result<T, io::Error> {
-        Ok(self)
-    }
-}
-
-/// A program to create a directory structure from tree representations
-/// of directories
-#[derive(Parser, Debug)]
-#[clap(version, about, long_about = None)]
-struct Args {
-    /// Directory in which to generate tree
-    ///
-    /// (Uses current working directory if no directory is specified)
-    #[clap(short, long)]
-    dir: Option<String>,
-    /// Input file describing tree
-    ///
-    /// (read from stdin if no file is specified)
-    #[clap()]
-    tree_file: Option<String>,
-
-    /// Print the names of files and directories without creating them.
-    ///
-    /// Implies verbose.
-    #[clap(long)]
-    dry_run: bool,
-
-    /// Print out the names of files and directories that untree creates
-    #[clap(long)]
-    verbose: bool,
-}
+use {traits::Pure, macros::either, types::*};
 
 type IO = Result<(), io::Error>;
 type IOResult<T> = Result<T, io::Error>;
@@ -103,10 +57,6 @@ fn get_entry(entry: &str) -> (i32, &str) {
         }
         None => (0, entry),
     }
-}
-enum PathKind {
-    File,
-    Directory,
 }
 
 fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
