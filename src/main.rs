@@ -15,6 +15,20 @@ struct UntreeOptions {
     verbose: bool,
 }
 
+trait Pure<T> {
+    fn pure(self) -> T;
+}
+impl<T> Pure<Option<T>> for T {
+    fn pure(self) -> Option<T> {
+        Some(self)
+    }
+}
+impl<T> Pure<Result<T, io::Error>> for T {
+    fn pure(self) -> Result<T, io::Error> {
+        Ok(self)
+    }
+}
+
 /// A program to create a directory structure from tree representations
 /// of directories
 #[derive(Parser, Debug)]
@@ -112,8 +126,7 @@ fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
             }
             PathKind::Directory => std::fs::create_dir_all(path)?,
         }
-    }
-    Ok(())
+    }.pure()
 }
 
 fn create_tree(directory: String, lines: Lines<impl BufRead>, options: UntreeOptions) -> IO {
@@ -124,7 +137,7 @@ fn create_tree(directory: String, lines: Lines<impl BufRead>, options: UntreeOpt
         let line = result?;
         if line == "" {
             // We're done
-            return Ok(());
+            return ().pure()
         }
 
         let (depth, filename) = get_entry(line.as_ref());
@@ -140,7 +153,5 @@ fn create_tree(directory: String, lines: Lines<impl BufRead>, options: UntreeOpt
         }
         old_depth = depth;
     }
-    create_path(Path::new(&path), PathKind::File, options)?;
-
-    Ok(())
+    create_path(Path::new(&path), PathKind::File, options)
 }
