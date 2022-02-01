@@ -25,9 +25,15 @@ struct Args {
     #[clap()]
     tree_file: Option<String>,
 
-    /// Print the names of files and directories without creating them
+    /// Print the names of files and directories without creating them.
+    ///
+    /// Implies verbose.
     #[clap(long)]
     dry_run: bool,
+
+    /// Print out the names of files and directories that untree creates
+    #[clap(long)]
+    verbose: bool,
 }
 
 type IO = Result<(), io::Error>;
@@ -42,12 +48,12 @@ fn main() -> IO {
     };
 
     match args.tree_file {
-        None => create_tree(directory, read_stdin(), args.dry_run),
+        None => create_tree(directory, read_stdin(), args.dry_run, args.verbose),
         Some(filename) => {
             if filename == "-" {
-                create_tree(directory, read_stdin(), args.dry_run)
+                create_tree(directory, read_stdin(), args.dry_run, args.verbose)
             } else {
-                create_tree(directory, read_lines(filename)?, args.dry_run)
+                create_tree(directory, read_lines(filename)?, args.dry_run, args.verbose)
             }
         }
     }
@@ -86,11 +92,13 @@ enum PathKind {
     File,
     Directory,
 }
-fn create_path(path: &Path, kind: PathKind, dry_run: bool) -> IO {
+fn create_path(path: &Path, kind: PathKind, dry_run: bool, verbose: bool) -> IO {
     let name = path.to_str().unwrap_or("<unprintable>");
-    match kind {
-        PathKind::File => println!("{} {}", "touch".bold().green(), name.bold().white()),
-        PathKind::Directory => println!("{} -p {}", "mkdir".bold().green(), name.bold().blue()),
+    if dry_run || verbose {
+        match kind {
+            PathKind::File => println!("{} {}", "touch".bold().green(), name.bold().white()),
+            PathKind::Directory => println!("{} -p {}", "mkdir".bold().green(), name.bold().blue()),
+        }
     }
     if !dry_run {
         match kind {
@@ -105,7 +113,7 @@ fn create_path(path: &Path, kind: PathKind, dry_run: bool) -> IO {
     Ok(())
 }
 
-fn create_tree(directory: String, lines: Lines<impl BufRead>, dry_run: bool) -> IO {
+fn create_tree(directory: String, lines: Lines<impl BufRead>, dry_run: bool, verbose: bool) -> IO {
     let mut path = PathBuf::from(directory);
 
     let mut old_depth = -1;
@@ -118,18 +126,18 @@ fn create_tree(directory: String, lines: Lines<impl BufRead>, dry_run: bool) -> 
 
         let (depth, filename) = get_entry(line.as_ref());
         if depth <= old_depth {
-            create_path(Path::new(&path), PathKind::File, dry_run)?;
+            create_path(Path::new(&path), PathKind::File, dry_run, verbose)?;
             for _ in depth..old_depth {
                 path.pop();
             }
             path.set_file_name(filename);
         } else {
-            create_path(Path::new(&path), PathKind::Directory, dry_run)?;
+            create_path(Path::new(&path), PathKind::Directory, dry_run, verbose)?;
             path.push(filename);
         }
         old_depth = depth;
     }
-    create_path(Path::new(&path), PathKind::File, dry_run)?;
+    create_path(Path::new(&path), PathKind::File, dry_run, verbose)?;
 
     Ok(())
 }
