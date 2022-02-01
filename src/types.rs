@@ -6,10 +6,9 @@ pub struct UntreeOptions {
     pub verbose: bool,
 }
 
-/// A program to create a directory structure from tree representations
-/// of directories
+/// A program to instantiate directory trees from the output of tree
 #[derive(Parser, Debug)]
-#[clap(version, about, long_about = None)]
+#[clap(author, version, about, long_about = None)]
 pub struct Args {
     /// Directory in which to generate tree
     ///
@@ -29,7 +28,7 @@ pub struct Args {
     pub dry_run: bool,
 
     /// Print out the names of files and directories that untree creates
-    #[clap(long)]
+    #[clap(short, long)]
     pub verbose: bool,
 }
 
