@@ -1,45 +1,56 @@
-use std::env;
 use std::fs::File;
-use std::fs::OpenOptions;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
 use std::path::{Path, PathBuf};
-use std::vec::Vec;
 
 use colored::*;
 
 mod macros;
 use macros::either;
 
+use clap::Parser;
+
+/// A program to create a directory structure from tree representations
+/// of directories
+#[derive(Parser, Debug)]
+#[clap(version, about, long_about = None)]
+struct Args {
+    /// Directory in which to generate tree
+    ///
+    /// (Uses current working directory if no directory is specified)
+    #[clap(short, long)]
+    dir: Option<String>,
+    /// Input file describing tree
+    ///
+    /// (read from stdin if no file is specified)
+    #[clap()]
+    tree_file: Option<String>,
+
+    /// Print the names of files and directories without creating them
+    #[clap(long)]
+    dry_run: bool,
+}
+
 type IO = Result<(), io::Error>;
 type IOResult<T> = Result<T, io::Error>;
 
 fn main() -> IO {
-    let args: Vec<String> = env::args().collect();
+    let args = Args::parse();
 
-    match args.len() {
-        1 => create_tree(".", read_stdin(), true),
-        2 => match args[1].as_ref() {
-            "-" => create_tree(".", read_stdin(), true),
-            "-h" | "--help" => Ok(print_help(args)),
-            filename => create_tree(".", read_lines(filename)?, true),
-        },
-        _ => Ok(print_help(args)),
-    }
-}
-
-fn print_help(args: Vec<String>) {
-    let program_name = if args.len() == 0 {
-        "<unknown>"
-    } else {
-        &args[0]
+    let directory = match args.dir {
+        None => String::from(""),
+        Some(str) => str,
     };
-    println!();
-    println!("Usage:");
-    println!();
-    println!("    {program_name} [<filename>]");
-    println!();
-    println!("Reads lines from standard input, unless a filename is provided.");
-    println!("If the filename is '-', standard input is used as the file.");
+
+    match args.tree_file {
+        None => create_tree(directory, read_stdin(), args.dry_run),
+        Some(filename) => {
+            if filename == "-" {
+                create_tree(directory, read_stdin(), args.dry_run)
+            } else {
+                create_tree(directory, read_lines(filename)?, args.dry_run)
+            }
+        }
+    }
 }
 
 fn read_stdin() -> Lines<BufReader<Stdin>> {
@@ -92,7 +103,7 @@ fn create_path(path: &Path, kind: PathKind, dry_run: bool) -> IO {
     Ok(())
 }
 
-fn create_tree(directory: &str, lines: Lines<impl BufRead>, dry_run: bool) -> IO {
+fn create_tree(directory: String, lines: Lines<impl BufRead>, dry_run: bool) -> IO {
     let mut path = PathBuf::from(directory);
 
     let mut old_depth = -1;
