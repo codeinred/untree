@@ -71,7 +71,9 @@ fn get_entry(entry: &str) -> (i32, &str) {
         entry.strip_prefix("    "),
         entry.strip_prefix("└── "),
         entry.strip_prefix("├── "),
-        entry.strip_prefix("│   ")
+        entry.strip_prefix("│   "),
+        // Some iplementations of tree use a non-breaking space here (ua0)
+        entry.strip_prefix("│\u{a0}\u{a0} ")
     ) {
         Some(suffix) => {
             let (i, result) = get_entry(suffix);
