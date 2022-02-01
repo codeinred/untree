@@ -1,14 +1,14 @@
+use clap::Parser;
+use colored::*;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
 use std::path::{Path, PathBuf};
-use clap::Parser;
-use colored::*;
 
 mod macros;
 mod traits;
 mod types;
 
-use {traits::Pure, macros::either, types::*};
+use {macros::either, traits::Pure, types::*};
 
 type IO = Result<(), io::Error>;
 type IOResult<T> = Result<T, io::Error>;
