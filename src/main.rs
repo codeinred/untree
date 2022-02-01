@@ -10,22 +10,29 @@ fn main() {
         1 => process_lines("(standard input)", read_stdin()),
         2 => match args[1].as_ref() {
             "-" => process_lines("(standard input)", read_stdin()),
+            "-h" | "--help" => print_help(args),
             filename => match read_lines(filename) {
                 Ok(lines) => process_lines(filename, lines),
                 Err(err) => println!("Unable to open '{filename}': {err}"),
             },
         },
-        num_inputs => {
-            let program_name = if num_inputs == 0 {
-                "<unknown>"
-            } else {
-                &args[0]
-            };
-            println!("Usage:\n\t{program_name} [filename]");
-            println!();
-            println!("If a filename is provided, reads lines from that file. Otherwise, reads lines from stdin");
-        }
+        _ => print_help(args),
     }
+}
+
+fn print_help(args: Vec<String>) {
+    let program_name = if args.len() == 0 {
+        "<unknown>"
+    } else {
+        &args[0]
+    };
+    println!();
+    println!("Usage:");
+    println!();
+    println!("    {program_name} [<filename>]");
+    println!();
+    println!("Reads lines from standard input, unless a filename is provided.");
+    println!("If the filename is '-', standard input is used as the file.");
 }
 
 fn read_stdin() -> io::Lines<io::BufReader<Stdin>> {
