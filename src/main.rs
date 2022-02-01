@@ -48,25 +48,16 @@ type IOResult<T> = Result<T, io::Error>;
 fn main() -> IO {
     let args = Args::parse();
 
-    let directory = match args.dir {
-        None => String::from(""),
-        Some(str) => str,
-    };
+    let directory = args.dir.unwrap_or("".into());
 
     let options = UntreeOptions {
         dry_run: args.dry_run,
         verbose: args.verbose,
     };
 
-    match args.tree_file {
-        None => create_tree(directory, read_stdin(), options),
-        Some(filename) => {
-            if filename == "-" {
-                create_tree(directory, read_stdin(), options)
-            } else {
-                create_tree(directory, read_lines(filename)?, options)
-            }
-        }
+    match args.tree_file.as_ref().map(String::as_str) {
+        None | Some("-") => create_tree(directory, read_stdin(), options),
+        Some(filename) => create_tree(directory, read_lines(filename)?, options),
     }
 }
 
@@ -126,7 +117,7 @@ fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
 }
 
 fn create_tree(directory: String, lines: Lines<impl BufRead>, options: UntreeOptions) -> IO {
-    let mut path = PathBuf::from(directory);
+    let mut path: PathBuf = directory.into();
 
     let mut old_depth = -1;
     for result in lines {
