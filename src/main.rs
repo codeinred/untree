@@ -9,6 +9,12 @@ use macros::either;
 
 use clap::Parser;
 
+#[derive(Clone, Copy)]
+struct UntreeOptions {
+    dry_run: bool,
+    verbose: bool,
+}
+
 /// A program to create a directory structure from tree representations
 /// of directories
 #[derive(Parser, Debug)]
@@ -47,13 +53,18 @@ fn main() -> IO {
         Some(str) => str,
     };
 
+    let options = UntreeOptions {
+        dry_run: args.dry_run,
+        verbose: args.verbose,
+    };
+
     match args.tree_file {
-        None => create_tree(directory, read_stdin(), args.dry_run, args.verbose),
+        None => create_tree(directory, read_stdin(), options),
         Some(filename) => {
             if filename == "-" {
-                create_tree(directory, read_stdin(), args.dry_run, args.verbose)
+                create_tree(directory, read_stdin(), options)
             } else {
-                create_tree(directory, read_lines(filename)?, args.dry_run, args.verbose)
+                create_tree(directory, read_lines(filename)?, options)
             }
         }
     }
@@ -92,15 +103,16 @@ enum PathKind {
     File,
     Directory,
 }
-fn create_path(path: &Path, kind: PathKind, dry_run: bool, verbose: bool) -> IO {
+
+fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
     let name = path.to_str().unwrap_or("<unprintable>");
-    if dry_run || verbose {
+    if options.dry_run || options.verbose {
         match kind {
             PathKind::File => println!("{} {}", "touch".bold().green(), name.bold().white()),
             PathKind::Directory => println!("{} -p {}", "mkdir".bold().green(), name.bold().blue()),
         }
     }
-    if !dry_run {
+    if !options.dry_run {
         match kind {
             PathKind::File => {
                 if !path.exists() {
@@ -113,7 +125,7 @@ fn create_path(path: &Path, kind: PathKind, dry_run: bool, verbose: bool) -> IO 
     Ok(())
 }
 
-fn create_tree(directory: String, lines: Lines<impl BufRead>, dry_run: bool, verbose: bool) -> IO {
+fn create_tree(directory: String, lines: Lines<impl BufRead>, options: UntreeOptions) -> IO {
     let mut path = PathBuf::from(directory);
 
     let mut old_depth = -1;
@@ -126,18 +138,18 @@ fn create_tree(directory: String, lines: Lines<impl BufRead>, dry_run: bool, ver
 
         let (depth, filename) = get_entry(line.as_ref());
         if depth <= old_depth {
-            create_path(Path::new(&path), PathKind::File, dry_run, verbose)?;
+            create_path(Path::new(&path), PathKind::File, options)?;
             for _ in depth..old_depth {
                 path.pop();
             }
             path.set_file_name(filename);
         } else {
-            create_path(Path::new(&path), PathKind::Directory, dry_run, verbose)?;
+            create_path(Path::new(&path), PathKind::Directory, options)?;
             path.push(filename);
         }
         old_depth = depth;
     }
-    create_path(Path::new(&path), PathKind::File, dry_run, verbose)?;
+    create_path(Path::new(&path), PathKind::File, options)?;
 
     Ok(())
 }
