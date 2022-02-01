@@ -1,5 +1,6 @@
 use std::env;
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
@@ -16,11 +17,11 @@ fn main() -> IO {
     let args: Vec<String> = env::args().collect();
 
     match args.len() {
-        1 => process_lines("(standard input)", read_stdin()),
+        1 => create_tree(".", read_stdin(), true),
         2 => match args[1].as_ref() {
-            "-" => process_lines("(standard input)", read_stdin()),
+            "-" => create_tree(".", read_stdin(), true),
             "-h" | "--help" => Ok(print_help(args)),
-            filename => process_lines(filename, read_lines(filename)?),
+            filename => create_tree(".", read_lines(filename)?, true),
         },
         _ => Ok(print_help(args)),
     }
@@ -68,9 +69,31 @@ fn get_entry(entry: &str) -> (i32, &str) {
         None => (0, entry),
     }
 }
+enum PathKind {
+    File,
+    Directory,
+}
+fn create_path(path: &Path, kind: PathKind, dry_run: bool) -> IO {
+    let name = path.to_str().unwrap_or("<unprintable>");
+    match kind {
+        PathKind::File => println!("{} {}", "touch".bold().green(), name.bold().white()),
+        PathKind::Directory => println!("{} -p {}", "mkdir".bold().green(), name.bold().blue()),
+    }
+    if !dry_run {
+        match kind {
+            PathKind::File => {
+                if !path.exists() {
+                    OpenOptions::new().create_new(true).open(&path)?;
+                }
+            }
+            PathKind::Directory => std::fs::create_dir_all(path)?,
+        }
+    }
+    Ok(())
+}
 
-fn process_lines(_filename: &str, lines: Lines<impl BufRead>) -> IO {
-    let mut path = PathBuf::new();
+fn create_tree(directory: &str, lines: Lines<impl BufRead>, dry_run: bool) -> IO {
+    let mut path = PathBuf::from(directory);
 
     let mut old_depth = -1;
     for result in lines {
@@ -82,22 +105,18 @@ fn process_lines(_filename: &str, lines: Lines<impl BufRead>) -> IO {
 
         let (depth, filename) = get_entry(line.as_ref());
         if depth <= old_depth {
-            File::create(Path::new(&path))?;
+            create_path(Path::new(&path), PathKind::File, dry_run)?;
             for _ in depth..old_depth {
                 path.pop();
             }
             path.set_file_name(filename);
         } else {
-            std::fs::create_dir_all(Path::new(&path))?;
+            create_path(Path::new(&path), PathKind::Directory, dry_run)?;
             path.push(filename);
         }
         old_depth = depth;
-        println!(
-            "depth={}, filename={}",
-            depth.to_string().bold(),
-            path.to_str().unwrap().blue().bold()
-        );
     }
+    create_path(Path::new(&path), PathKind::File, dry_run)?;
 
     Ok(())
 }
