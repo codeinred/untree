@@ -2,6 +2,12 @@ use std::env;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
 use std::path::Path;
+use std::vec::Vec;
+
+use colored::*;
+
+mod macros;
+use macros::either;
 
 type IO = Result<(), io::Error>;
 type IOResult<T> = Result<T, io::Error>;
@@ -45,11 +51,41 @@ fn read_lines(file: impl AsRef<Path>) -> IOResult<Lines<BufReader<File>>> {
     File::open(file).map(|file| io::BufReader::new(file).lines())
 }
 
-fn process_lines(filename: &str, lines: Lines<impl BufRead>) -> IO {
-    println!("      │ File: {filename}");
-    println!("──────┼────────────────────────────────");
-    Ok(for (i, result) in lines.enumerate() {
+/**
+ * Returns an entry in the tree, where the first result is the depth, and the second result is the file
+ */
+fn get_entry(entry: &str) -> (i32, &str) {
+    match either!(
+        entry.strip_prefix("    "),
+        entry.strip_prefix("└── "),
+        entry.strip_prefix("├── "),
+        entry.strip_prefix("│   ")
+    ) {
+        Some(suffix) => {
+            let (i, result) = get_entry(suffix);
+            (i + 1, result)
+        }
+        None => (0, entry),
+    }
+}
+
+fn process_lines(_filename: &str, lines: Lines<impl BufRead>) -> IO {
+    // let mut pathStack = vec!("");
+
+    for result in lines {
         let line = result?;
-        println!("{i:5} │ {line}");
-    })
+        if line == "" {
+            // We're done
+            return Ok(());
+        }
+
+        let (depth, filename) = get_entry(line.as_ref());
+        println!(
+            "depth={}, filename={}",
+            depth.to_string().bold(),
+            filename.blue().bold()
+        );
+    }
+
+    Ok(())
 }
