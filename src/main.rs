@@ -94,7 +94,7 @@ fn create_path(path: &Path, kind: PathKind, dry_run: bool) -> IO {
         match kind {
             PathKind::File => {
                 if !path.exists() {
-                    OpenOptions::new().create_new(true).open(&path)?;
+                    File::create(&path)?;
                 }
             }
             PathKind::Directory => std::fs::create_dir_all(path)?,
