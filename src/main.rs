@@ -46,7 +46,10 @@ fn main() -> IO {
                     create_tree(&directory, read_lines("-")?, options)?;
                 }
                 file => {
-                    eprintln!("{}", format!("Reading tree from file '{file}'").red().bold());
+                    eprintln!(
+                        "{}",
+                        format!("Reading tree from file '{file}'").red().bold()
+                    );
                     create_tree(&directory, read_lines(file)?, options)?;
                 }
             }
@@ -90,8 +93,8 @@ fn get_entry(mut entry: &str) -> (i32, &str) {
 }
 
 fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
-    let name = path.to_str().unwrap_or("<unprintable>");
     if options.dry_run || options.verbose {
+        let name = path.to_str().unwrap_or("<unprintable>");
         match kind {
             PathKind::File => println!("{} {}", "touch".bold().green(), name.bold().white()),
             PathKind::Directory => println!("{} -p {}", "mkdir".bold().green(), name.bold().blue()),
@@ -122,16 +125,16 @@ fn create_tree(directory: &String, lines: Lines<impl BufRead>, options: UntreeOp
 
         let (depth, filename) = get_entry(line.as_ref());
         if depth <= old_depth {
-            create_path(Path::new(&path), PathKind::File, options)?;
+            create_path(path.as_path(), PathKind::File, options)?;
             for _ in depth..old_depth {
                 path.pop();
             }
             path.set_file_name(filename);
         } else {
-            create_path(Path::new(&path), PathKind::Directory, options)?;
+            create_path(path.as_path(), PathKind::Directory, options)?;
             path.push(filename);
         }
         old_depth = depth;
     }
-    create_path(Path::new(&path), PathKind::File, options)
+    create_path(path.as_path(), PathKind::File, options)
 }
