@@ -4,6 +4,14 @@ version = "0.9.4"
 edition = "2021"
 authors = ["Alecto Irene Perez <perez.cs@pm.me>"]
 
+[lib]
+name = "untree"
+path = "src/lib.rs"
+
+[[bin]]
+name = "untree"
+path = "src/main.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
