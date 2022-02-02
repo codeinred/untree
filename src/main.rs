@@ -1,7 +1,7 @@
 use clap::Parser;
 use colored::*;
 use std::fs::{File, OpenOptions};
-use std::io::{self, BufRead, BufReader, ErrorKind::AlreadyExists, Lines, Stdin};
+use std::io::{self, BufRead, BufReader, ErrorKind::AlreadyExists, Lines, Result, Stdin};
 use std::path::{Path, PathBuf};
 
 mod macros;
@@ -12,10 +12,7 @@ use {
     types::{PathKind::*, *},
 };
 
-type IO = Result<(), io::Error>;
-type IOResult<T> = Result<T, io::Error>;
-
-fn main() -> IO {
+fn main() -> Result<()> {
     let args = Args::parse();
 
     let directory = args.dir.unwrap_or("".into());
@@ -65,7 +62,7 @@ fn read_stdin() -> Lines<BufReader<Stdin>> {
 
 // The output is wrapped in a Result to allow matching on errors
 // Returns an Iterator to the Reader of the lines of the file.
-fn read_lines(file: impl AsRef<Path>) -> IOResult<Lines<BufReader<File>>> {
+fn read_lines(file: impl AsRef<Path>) -> Result<Lines<BufReader<File>>> {
     File::open(file).map(|file| io::BufReader::new(file).lines())
 }
 
@@ -94,7 +91,7 @@ fn get_entry(mut entry: &str) -> (i32, &str) {
 }
 
 // Atomically create a file, if it doesn't already exist. This is an atomic operation
-fn atomic_create_file(path: &Path) -> IO {
+fn atomic_create_file(path: &Path) -> Result<()> {
     match OpenOptions::new()
         .read(true)
         .write(true)
@@ -113,7 +110,7 @@ fn atomic_create_file(path: &Path) -> IO {
     }
 }
 
-fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
+fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> Result<()> {
     let name = path.to_str().unwrap_or("<unprintable>");
 
     match (options.is_verbose(), kind) {
@@ -129,7 +126,11 @@ fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
     }
 }
 
-fn create_tree(directory: &String, lines: Lines<impl BufRead>, options: UntreeOptions) -> IO {
+fn create_tree(
+    directory: &String,
+    lines: Lines<impl BufRead>,
+    options: UntreeOptions,
+) -> Result<()> {
     let mut path: PathBuf = directory.into();
 
     let mut old_depth = -1;
