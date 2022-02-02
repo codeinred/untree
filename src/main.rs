@@ -60,15 +60,14 @@ fn read_stdin() -> Lines<BufReader<Stdin>> {
     io::BufReader::new(io::stdin()).lines()
 }
 
-// The output is wrapped in a Result to allow matching on errors
-// Returns an Iterator to the Reader of the lines of the file.
+/// The output is wrapped in a Result to allow matching on errors
+/// Returns an Iterator to the Reader of the lines of the file.
 fn read_lines(file: impl AsRef<Path>) -> Result<Lines<BufReader<File>>> {
     File::open(file).map(|file| io::BufReader::new(file).lines())
 }
 
-/**
- * Returns an entry in the tree, where the first result is the depth, and the second result is the file
- */
+/// Returns an entry in the tree, where the first result is the depth,
+/// and the second result is the file
 fn get_entry(mut entry: &str) -> (i32, &str) {
     let mut depth = 0;
 
@@ -90,7 +89,7 @@ fn get_entry(mut entry: &str) -> (i32, &str) {
     }
 }
 
-// Atomically create a file, if it doesn't already exist. This is an atomic operation
+/// Atomically create a file, if it doesn't already exist. This is an atomic operation
 fn atomic_create_file(path: &Path) -> Result<()> {
     match OpenOptions::new()
         .read(true)
