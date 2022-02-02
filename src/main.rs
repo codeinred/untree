@@ -5,12 +5,10 @@ use std::io::{self, BufRead, BufReader, ErrorKind::AlreadyExists, Lines, Stdin};
 use std::path::{Path, PathBuf};
 
 mod macros;
-mod traits;
 mod types;
 
 use {
     macros::either,
-    traits::Pure,
     types::{PathKind::*, *},
 };
 
@@ -36,7 +34,7 @@ fn main() -> IO {
         );
         create_tree(&directory, read_stdin(), options)
     } else {
-        for file in tree_files {
+        Ok(for file in tree_files {
             match file.as_str() {
                 "-" => {
                     eprintln!(
@@ -57,8 +55,7 @@ fn main() -> IO {
                     create_tree(&directory, read_lines(file)?, options)?;
                 }
             }
-        }
-        .pure()
+        })
     }
 }
 
@@ -106,10 +103,10 @@ fn atomic_create_file(path: &Path) -> IO {
         .create_new(true)
         .open(path)
     {
-        Ok(_) => ().pure(),
+        Ok(_) => Ok(()),
         Err(err) => match err.kind() {
             // If the file already exists, that's fine - we don't need to take an action
-            AlreadyExists => ().pure(),
+            AlreadyExists => Ok(()),
             // Otherwise, we propagate the error forward
             _ => Err(err),
         },
@@ -126,7 +123,7 @@ fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
     }
 
     match (options.dry_run, kind) {
-        (true, _) => ().pure(), // Do nothing when dry_run is true
+        (true, _) => Ok(()), // Do nothing when dry_run is true
         (_, FilePath) => atomic_create_file(path),
         (_, Directory) => std::fs::create_dir_all(path),
     }
