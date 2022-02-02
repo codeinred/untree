@@ -24,7 +24,6 @@ pub struct Args {
     pub dir: Option<String>,
     /// List of files containing trees to be read by untree. If no files are
     /// specified, then the tree is read from standard input.
-    #[clap()]
     pub tree_files: Vec<String>,
 
     /// Print the names of files and directories without creating them.
