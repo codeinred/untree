@@ -1,6 +1,7 @@
 use clap::Parser;
 use colored::*;
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
 use std::path::{Path, PathBuf};
 
@@ -92,9 +93,29 @@ fn get_entry(mut entry: &str) -> (i32, &str) {
     }
 }
 
+// Atomically create a file, if it doesn't already exist. This is an atomic operation
+fn atomic_create_file(path: &Path) -> IO {
+    match OpenOptions::new()
+        .read(true)
+        .write(true)
+        // Ensure that the file is only created if it doesn't already exist
+        // This means that creation + existence checking is an atomic operation
+        .create_new(true)
+        .open(path)
+    {
+        Ok(_) => return ().pure(),
+        Err(err) => match err.kind() {
+            // If the file already exists, that's fine - we don't need to take an action
+            io::ErrorKind::AlreadyExists => return ().pure(),
+            // Otherwise, we propagate the error forward
+            _ => return Err(err),
+        },
+    }
+}
+
 fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
+    let name = path.to_str().unwrap_or("<unprintable>");
     if options.dry_run || options.verbose {
-        let name = path.to_str().unwrap_or("<unprintable>");
         match kind {
             PathKind::File => println!("{} {}", "touch".bold().green(), name.bold().white()),
             PathKind::Directory => println!("{} -p {}", "mkdir".bold().green(), name.bold().blue()),
@@ -102,15 +123,12 @@ fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
     }
     if !options.dry_run {
         match kind {
-            PathKind::File => {
-                if !path.exists() {
-                    File::create(&path)?;
-                }
-            }
-            PathKind::Directory => std::fs::create_dir_all(path)?,
+            PathKind::File => atomic_create_file(path),
+            PathKind::Directory => std::fs::create_dir_all(path),
         }
+    } else {
+        ().pure()
     }
-    .pure()
 }
 
 fn create_tree(directory: &String, lines: Lines<impl BufRead>, options: UntreeOptions) -> IO {
