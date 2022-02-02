@@ -23,18 +23,35 @@ fn main() -> IO {
         verbose: args.verbose,
     };
 
-    match args.tree_file.as_ref().map(String::as_str) {
-        None | Some("-") => {
-            eprintln!(
-                "{}",
-                format!("Reading tree from standard input").red().bold()
-            );
-            create_tree(directory, read_stdin(), options)
+    let tree_files = &args.tree_files;
+
+    if tree_files.len() == 0 {
+        eprintln!(
+            "{}",
+            format!("Reading tree from standard input").red().bold()
+        );
+        create_tree(&directory, read_stdin(), options)
+    } else {
+        for file in tree_files {
+            match file.as_str() {
+                "-" => {
+                    eprintln!(
+                        "{}",
+                        format!("Reading tree from standard input").red().bold()
+                    );
+                    create_tree(&directory, read_stdin(), options)?;
+                }
+                "\\-" => {
+                    eprintln!("{}", format!("Reading tree from file '-'").red().bold());
+                    create_tree(&directory, read_lines("-")?, options)?;
+                }
+                file => {
+                    eprintln!("{}", format!("Reading tree from file '{file}'").red().bold());
+                    create_tree(&directory, read_lines(file)?, options)?;
+                }
+            }
         }
-        Some(filename) => {
-            eprintln!("{}", format!("Reading tree from {filename}").red().bold());
-            create_tree(directory, read_lines(filename)?, options)
-        }
+        .pure()
     }
 }
 
@@ -93,7 +110,7 @@ fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
     .pure()
 }
 
-fn create_tree(directory: String, lines: Lines<impl BufRead>, options: UntreeOptions) -> IO {
+fn create_tree(directory: &String, lines: Lines<impl BufRead>, options: UntreeOptions) -> IO {
     let mut path: PathBuf = directory.into();
 
     let mut old_depth = -1;

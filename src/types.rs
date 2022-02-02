@@ -15,11 +15,11 @@ pub struct Args {
     /// (Uses current working directory if no directory is specified)
     #[clap(short, long)]
     pub dir: Option<String>,
-    /// Input file describing tree
+    /// List of files containing trees to be read by untree
     ///
-    /// (read from stdin if no file is specified)
+    /// (If no files are specified then the tree is read from stdin)
     #[clap()]
-    pub tree_file: Option<String>,
+    pub tree_files: Vec<String>,
 
     /// Print the names of files and directories without creating them.
     ///
