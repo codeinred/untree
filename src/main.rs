@@ -91,14 +91,9 @@ fn get_entry(mut entry: &str) -> (i32, &str) {
 
 /// Atomically create a file, if it doesn't already exist. This is an atomic operation
 fn atomic_create_file(path: &Path) -> Result<()> {
-    match OpenOptions::new()
-        .read(true)
-        .write(true)
-        // Ensure that the file is only created if it doesn't already exist
-        // This means that creation + existence checking is an atomic operation
-        .create_new(true)
-        .open(path)
-    {
+    // Ensure that the file is only created if it doesn't already exist
+    // This means that creation + existence checking is an atomic operation
+    match OpenOptions::new().write(true).create_new(true).open(path) {
         Ok(_) => Ok(()),
         Err(err) => match err.kind() {
             // If the file already exists, that's fine - we don't need to take an action
