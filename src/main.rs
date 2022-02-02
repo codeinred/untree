@@ -1,7 +1,6 @@
 use clap::Parser;
 use colored::*;
-use std::fs::File;
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, ErrorKind::AlreadyExists, Lines, Stdin};
 use std::path::{Path, PathBuf};
 
@@ -9,7 +8,11 @@ mod macros;
 mod traits;
 mod types;
 
-use {macros::either, traits::Pure, types::*};
+use {
+    macros::either,
+    traits::Pure,
+    types::{PathKind::*, *},
+};
 
 type IO = Result<(), io::Error>;
 type IOResult<T> = Result<T, io::Error>;
@@ -118,16 +121,14 @@ fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
 
     match (options.is_verbose(), kind) {
         (false, _) => {} // Print nothing if is_verbose() is false
-        (_, PathKind::File) => println!("{} {}", "touch".bold().green(), name.bold().white()),
-        (_, PathKind::Directory) => {
-            println!("{} -p {}", "mkdir".bold().green(), name.bold().blue())
-        }
+        (_, FilePath) => println!("{} {}", "touch".bold().green(), name.bold().white()),
+        (_, Directory) => println!("{} -p {}", "mkdir".bold().green(), name.bold().blue()),
     }
 
     match (options.dry_run, kind) {
         (true, _) => ().pure(), // Do nothing when dry_run is true
-        (_, PathKind::File) => atomic_create_file(path),
-        (_, PathKind::Directory) => std::fs::create_dir_all(path),
+        (_, FilePath) => atomic_create_file(path),
+        (_, Directory) => std::fs::create_dir_all(path),
     }
 }
 
@@ -143,16 +144,16 @@ fn create_tree(directory: &String, lines: Lines<impl BufRead>, options: UntreeOp
 
         let (depth, filename) = get_entry(line.as_ref());
         if depth <= old_depth {
-            create_path(path.as_path(), PathKind::File, options)?;
+            create_path(path.as_path(), FilePath, options)?;
             for _ in depth..old_depth {
                 path.pop();
             }
             path.set_file_name(filename);
         } else {
-            create_path(path.as_path(), PathKind::Directory, options)?;
+            create_path(path.as_path(), Directory, options)?;
             path.push(filename);
         }
         old_depth = depth;
     }
-    create_path(path.as_path(), PathKind::File, options)
+    create_path(path.as_path(), FilePath, options)
 }

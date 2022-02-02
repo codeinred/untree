@@ -39,6 +39,6 @@ pub struct Args {
 
 #[derive(Clone, Copy)]
 pub enum PathKind {
-    File,
+    FilePath,
     Directory,
 }
