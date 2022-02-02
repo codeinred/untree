@@ -116,19 +116,18 @@ fn atomic_create_file(path: &Path) -> IO {
 fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> IO {
     let name = path.to_str().unwrap_or("<unprintable>");
 
-    // Print either 'touch' or 'mkdir' if options.is_verbose()
     match (options.is_verbose(), kind) {
-        (true, PathKind::File) => println!("{} {}", "touch".bold().green(), name.bold().white()),
-        (true, PathKind::Directory) => {
+        (false, _) => {} // Print nothing if is_verbose() is false
+        (_, PathKind::File) => println!("{} {}", "touch".bold().green(), name.bold().white()),
+        (_, PathKind::Directory) => {
             println!("{} -p {}", "mkdir".bold().green(), name.bold().blue())
         }
-        _ => {}
     }
-    // If options.dry_run is false, create the file or the directory
+
     match (options.dry_run, kind) {
-        (false, PathKind::File) => atomic_create_file(path),
-        (false, PathKind::Directory) => std::fs::create_dir_all(path),
-        _ => ().pure(),
+        (true, _) => ().pure(), // Do nothing when dry_run is true
+        (_, PathKind::File) => atomic_create_file(path),
+        (_, PathKind::Directory) => std::fs::create_dir_all(path),
     }
 }
 
