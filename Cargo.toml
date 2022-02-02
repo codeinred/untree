@@ -6,7 +6,7 @@ authors = ["Alecto Irene Perez <perez.cs@pm.me>"]
 
 [lib]
 name = "untree"
-path = "src/lib.rs"
+path = "lib/mod.rs"
 
 [[bin]]
 name = "untree"

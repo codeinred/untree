@@ -3,10 +3,7 @@ use std::fs::OpenOptions;
 use std::io::{BufRead, ErrorKind::AlreadyExists, Lines, Result};
 use std::path::{Path, PathBuf};
 
-mod macros;
-mod types;
-use macros::either;
-pub use types::{PathKind::*, *};
+use super::{PathKind::*, *};
 
 /// Returns an entry in the tree, where the first result is the depth,
 /// and the second result is the file
