@@ -136,7 +136,7 @@ fn create_tree(
     let mut old_depth = -1;
     for result in lines {
         let line = result?;
-        if line == "" {
+        if line.is_empty() {
             break;
         }
 
