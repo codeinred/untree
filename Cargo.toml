@@ -8,4 +8,4 @@ authors = ["Alecto Irene Perez <perez.cs@pm.me>"]
 
 [dependencies]
 colored = "2"
-clap = {version = "3.0.13", features = ["derive"] }
+clap = {version = "3.0.13", features = ["derive", "wrap_help"] }
