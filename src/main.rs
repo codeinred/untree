@@ -2,7 +2,7 @@ use clap::Parser;
 use colored::*;
 use std::fs::File;
 use std::fs::OpenOptions;
-use std::io::{self, BufRead, BufReader, Lines, Stdin};
+use std::io::{self, BufRead, BufReader, ErrorKind::AlreadyExists, Lines, Stdin};
 use std::path::{Path, PathBuf};
 
 mod macros;
@@ -103,12 +103,12 @@ fn atomic_create_file(path: &Path) -> IO {
         .create_new(true)
         .open(path)
     {
-        Ok(_) => return ().pure(),
+        Ok(_) => ().pure(),
         Err(err) => match err.kind() {
             // If the file already exists, that's fine - we don't need to take an action
-            io::ErrorKind::AlreadyExists => return ().pure(),
+            AlreadyExists => ().pure(),
             // Otherwise, we propagate the error forward
-            _ => return Err(err),
+            _ => Err(err),
         },
     }
 }
