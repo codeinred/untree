@@ -6,6 +6,14 @@ pub struct UntreeOptions {
     pub verbose: bool,
 }
 
+impl UntreeOptions {
+    // Check if either self.verbose or self.dry_run is true.
+    // If dry_run is true, then verbose should be implied as true
+    pub fn is_verbose(&self) -> bool {
+        return self.verbose || self.dry_run;
+    }
+}
+
 /// A program to instantiate directory trees from the output of tree
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -32,6 +40,7 @@ pub struct Args {
     pub verbose: bool,
 }
 
+#[derive(Clone, Copy)]
 pub enum PathKind {
     File,
     Directory,
