@@ -28,10 +28,19 @@ pub fn get_entry(mut entry: &str) -> (i32, &str) {
     }
 }
 
-/// Atomically create a file, if it doesn't already exist. This is an atomic operation
-pub fn atomic_create_file(path: &Path) -> Result<()> {
-    // Ensure that the file is only created if it doesn't already exist
-    // This means that creation + existence checking is an atomic operation
+/// Atomically create a file, if it doesn't already exist. This is an atomic operation on the filesystem.
+/// If the file already exists, this function exits without affecting that file.
+pub fn touch_file(path: &Path) -> Result<()> {
+    // create_new is used to implement creation + existence checking as an atomic filesystem operation.
+
+    // create_new is used instead of create because the program should NOT
+    // attempt to open files that already exist. This could result in an exception being thrown
+    // if the file is locked by another program, or marked as read only.
+
+    // write(true) is passed because new files must be created as write-accessible.
+    // Otherwise a permissions error is thrown.
+
+    // See https://doc.rust-lang.org/std/fs/struct.OpenOptions.html#method.create for more details
     match OpenOptions::new().write(true).create_new(true).open(path) {
         Ok(_) => Ok(()),
         Err(err) => match err.kind() {
@@ -54,7 +63,7 @@ pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> Resul
 
     match (options.dry_run, kind) {
         (true, _) => Ok(()), // Do nothing when dry_run is true
-        (_, FilePath) => atomic_create_file(path),
+        (_, FilePath) => touch_file(path),
         (_, Directory) => std::fs::create_dir_all(path),
     }
 }
