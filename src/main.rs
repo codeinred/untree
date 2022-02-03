@@ -1,13 +1,36 @@
 use clap::Parser;
 use colored::*;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Lines, Result, Stdin};
-use std::path::{Path};
+use std::io::{self, BufRead, BufReader, Lines, Stdin};
+use std::path::Path;
 
-use untree::*;
+use untree::{PathContext::*, *};
 
-fn main() -> PathResult<()> {
-    use PathContext::*;
+fn main() {
+    match run() {
+        Err(err) => match err.context {
+            Missing => eprintln!("\nError with unknown source. {}", err.base_error),
+            Stdin => eprintln!("\nError reading from standard input. {}", err.base_error),
+            Read(path) => eprintln!(
+                "\nError reading file '{}'. {}",
+                path.to_str().unwrap_or("<unprintable>").bold(),
+                err.base_error
+            ),
+            CreateFile(path) => eprintln!(
+                "\nError creating file '{}'. {}",
+                path.to_str().unwrap_or("<unprintable>").bold(),
+                err.base_error
+            ),
+            CreateDirectory(path) => eprintln!(
+                "\nError creating directory '{}'. {}",
+                path.to_str().unwrap_or("<unprintable>").blue().bold(),
+                err.base_error
+            ),
+        },
+        _ => {}
+    }
+}
+fn run() -> PathResult<()> {
     let args = Args::parse();
 
     let directory = args.dir.unwrap_or("".into());
@@ -24,7 +47,7 @@ fn main() -> PathResult<()> {
             "{}",
             format!("Reading tree from standard input").red().bold()
         );
-        create_tree(&directory, read_stdin(), options, FromStdin)
+        create_tree(&directory, read_stdin(), options).supply_missing(Stdin)
     } else {
         Ok(for file in tree_files {
             match file.as_str() {
@@ -33,18 +56,16 @@ fn main() -> PathResult<()> {
                         "{}",
                         format!("Reading tree from standard input").red().bold()
                     );
-                    create_tree(&directory, read_stdin(), options, FromStdin)?;
-                }
-                "\\-" => {
-                    eprintln!("{}", format!("Reading tree from file '-'").red().bold());
-                    create_tree(&directory, read_lines("-").add_context(Read("-"))?, options, Read("-"))?;
+                    create_tree(&directory, read_stdin(), options).supply_missing(Stdin)?;
                 }
                 file => {
+                    let file = file.strip_prefix("\\").unwrap_or(file);
                     eprintln!(
                         "{}",
                         format!("Reading tree from file '{file}'").red().bold()
                     );
-                    create_tree(&directory, read_lines(file).add_context(Read(file))?, options, Read(file))?;
+                    create_tree(&directory, read_lines(file)?, options)
+                        .supply_missing(Read(file.into()))?;
                 }
             }
         })
@@ -57,8 +78,13 @@ fn read_stdin() -> Lines<BufReader<Stdin>> {
 
 /// The output is wrapped in a Result to allow matching on errors
 /// Returns an Iterator to the Reader of the lines of the file.
-fn read_lines(file: impl AsRef<Path>) -> Result<Lines<BufReader<File>>> {
-    File::open(file).map(|file| io::BufReader::new(file).lines())
+fn read_lines<F>(file: F) -> untree::PathResult<Lines<BufReader<File>>>
+where
+    F: AsRef<Path> + Into<std::path::PathBuf>,
+{
+    File::open(file.as_ref())
+        .map(|file| io::BufReader::new(file).lines())
+        .add_context(Read(file))
 }
 
 /// A program to instantiate directory trees from the output of tree

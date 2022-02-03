@@ -1,12 +1,12 @@
 use std::error::Error;
 use std::fmt::{self, Debug, Display};
 
-use super::{AddContext, Collapse};
+use super::{AddContext, Collapse, SupplyMissing};
 
 #[derive(Debug)]
 pub struct ContextError<T: Debug + Display, E: Error> {
-    context: T,
-    base_error: E,
+    pub context: T,
+    pub base_error: E,
 }
 
 impl<T, E> Display for ContextError<T, E>
@@ -26,8 +26,7 @@ where
 
 impl<T: Debug + Display, E: Error> Error for ContextError<T, E> {}
 
-impl<E, C, T, Source> AddContext<C, Source, Result<T, ContextError<C, E>>>
-    for Result<T, E>
+impl<E, C, T, Source> AddContext<C, Source, Result<T, ContextError<C, E>>> for Result<T, E>
 where
     C: Debug + Display,
     E: Error,
@@ -40,6 +39,19 @@ where
                 context: context.collapse(),
                 base_error: err,
             }),
+        }
+    }
+}
+
+impl<T, E, Info> SupplyMissing<Info> for ContextError<T, E>
+where
+    E: Error,
+    T: Debug + Display + SupplyMissing<Info>,
+{
+    fn supply_missing(self, info: Info) -> Self {
+        Self {
+            context: self.context.supply_missing(info),
+            base_error: self.base_error,
         }
     }
 }

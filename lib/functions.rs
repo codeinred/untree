@@ -95,11 +95,10 @@ fn normalize_path(path: &Path) -> PathBuf {
     result
 }
 
-pub fn create_tree<T : Into<PathBuf> + Clone>(
+pub fn create_tree(
     directory: &String,
     mut lines: Lines<impl BufRead>,
-    options: UntreeOptions,
-    read_context : PathContext<T>
+    options: UntreeOptions
 ) -> PathResult<()> {
     let mut path: PathBuf = directory.into();
 
@@ -110,12 +109,12 @@ pub fn create_tree<T : Into<PathBuf> + Clone>(
             path = normalize_path(path.as_path());
             depth
         }
-        Some(Err(err)) => return Err(err).add_context(read_context),
+        Some(Err(err)) => return Err(err.into()),
         None => 0,
     };
 
     for result in lines {
-        let line = add_context!(result, read_context)?;
+        let line = match result { Err(err) => Err(err.into()), ok => ok }?;
         if line.is_empty() {
             break;
         }
