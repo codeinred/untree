@@ -1,4 +1,7 @@
-#[derive(Clone, Copy)]
+use std::fmt::{self, Display};
+
+
+#[derive(Clone, Copy, Debug)]
 pub struct UntreeOptions {
     pub dry_run: bool,
     pub verbose: bool,
@@ -12,8 +15,20 @@ impl UntreeOptions {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum PathKind {
     FilePath,
     Directory,
+}
+
+impl Display for PathKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Display for UntreeOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
 }
