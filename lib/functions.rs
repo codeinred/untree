@@ -1,6 +1,7 @@
 use colored::*;
-use std::fs::OpenOptions;
-use std::io::{BufRead, ErrorKind::AlreadyExists, Lines, Result};
+use std::fs::{create_dir_all, OpenOptions};
+use std::io::{self, BufRead, ErrorKind::AlreadyExists, Lines};
+use std::iter::Iterator;
 use std::path::{Path, PathBuf};
 
 use super::{PathKind::*, *};
@@ -30,7 +31,7 @@ pub fn get_entry(mut entry: &str) -> (i32, &str) {
 
 /// Atomically create a file, if it doesn't already exist. This is an atomic operation on the filesystem.
 /// If the file already exists, this function exits without affecting that file.
-pub fn touch_file(path: &Path) -> Result<()> {
+pub fn touch_file(path: &Path) -> io::Result<()> {
     // create_new is used to implement creation + existence checking as an atomic filesystem operation.
 
     // create_new is used instead of create because the program should NOT
@@ -52,7 +53,7 @@ pub fn touch_file(path: &Path) -> Result<()> {
     }
 }
 
-pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> Result<()> {
+pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> io::Result<()> {
     let name = path.to_str().unwrap_or("<unprintable>");
 
     match (options.is_verbose(), kind) {
@@ -64,24 +65,58 @@ pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> Resul
     match (options.dry_run, kind) {
         (true, _) => Ok(()), // Do nothing when dry_run is true
         (_, FilePath) => touch_file(path),
-        (_, Directory) => std::fs::create_dir_all(path),
+        (_, Directory) => create_dir_all(path),
     }
+}
+
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut result = PathBuf::new();
+    let mut go_back = 0;
+    for component in path.components() {
+        match component.as_os_str().to_str() {
+            Some(".") => {}
+            Some("..") => {
+                if !result.pop() {
+                    go_back += 1;
+                }
+            }
+            _ => result.push(component),
+        }
+    }
+    if go_back > 0 {
+        let mut prefix = PathBuf::new();
+        for _ in 0..go_back {
+            prefix.push("..");
+        }
+        prefix.push(result);
+        result = prefix;
+    }
+    result
 }
 
 pub fn create_tree(
     directory: &String,
-    lines: Lines<impl BufRead>,
+    mut lines: Lines<impl BufRead>,
     options: UntreeOptions,
-) -> Result<()> {
+) -> io::Result<()> {
     let mut path: PathBuf = directory.into();
 
-    let mut old_depth = -1;
+    let mut old_depth = match lines.next() {
+        Some(Ok(line)) => {
+            let (depth, filename) = get_entry(line.as_ref());
+            path.push(filename);
+            path = normalize_path(path.as_path());
+            depth
+        }
+        Some(Err(err)) => return Err(err),
+        None => 0,
+    };
+
     for result in lines {
         let line = result?;
         if line.is_empty() {
             break;
         }
-
         let (depth, filename) = get_entry(line.as_ref());
         if depth <= old_depth {
             create_path(path.as_path(), FilePath, options)?;
