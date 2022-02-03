@@ -1,5 +1,4 @@
-use std::fmt::{self, Display};
-
+use std::fmt::{self, Debug, Display};
 
 #[derive(Clone, Copy, Debug)]
 pub struct UntreeOptions {
@@ -22,13 +21,13 @@ pub enum PathKind {
 }
 
 impl Display for PathKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{self:?}")
     }
 }
 
 impl Display for UntreeOptions {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{self:?}")
     }
 }
