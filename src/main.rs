@@ -6,7 +6,7 @@ use std::path::{Path};
 
 use untree::*;
 
-fn main() -> Result<()> {
+fn main() -> PathResult<()> {
     let args = Args::parse();
 
     let directory = args.dir.unwrap_or("".into());
@@ -36,14 +36,14 @@ fn main() -> Result<()> {
                 }
                 "\\-" => {
                     eprintln!("{}", format!("Reading tree from file '-'").red().bold());
-                    create_tree(&directory, read_lines("-")?, options)?;
+                    create_tree(&directory, read_lines("-").add_context("-")?, options)?;
                 }
                 file => {
                     eprintln!(
                         "{}",
                         format!("Reading tree from file '{file}'").red().bold()
                     );
-                    create_tree(&directory, read_lines(file)?, options)?;
+                    create_tree(&directory, read_lines(file).add_context(file)?, options)?;
                 }
             }
         })
