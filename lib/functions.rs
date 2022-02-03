@@ -55,6 +55,7 @@ pub fn touch_file(path: &Path) -> io::Result<()> {
 
 pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> PathResult<()> {
     let name = path.to_str().unwrap_or("<unprintable>");
+    use PathContext::*;
 
     match (options.is_verbose(), kind) {
         (false, _) => {} // Print nothing if is_verbose() is false
@@ -64,8 +65,8 @@ pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> PathR
 
     match (options.dry_run, kind) {
         (true, _) => Ok(()), // Do nothing when dry_run is true
-        (_, FilePath) => touch_file(path).add_context(path),
-        (_, Directory) => create_dir_all(path).add_context(path),
+        (_, FilePath) => touch_file(path).add_context(CreateFile(path)),
+        (_, Directory) => create_dir_all(path).add_context(CreateDirectory(path)),
     }
 }
 
@@ -94,10 +95,11 @@ fn normalize_path(path: &Path) -> PathBuf {
     result
 }
 
-pub fn create_tree(
+pub fn create_tree<T : Into<PathBuf> + Clone>(
     directory: &String,
     mut lines: Lines<impl BufRead>,
     options: UntreeOptions,
+    read_context : PathContext<T>
 ) -> PathResult<()> {
     let mut path: PathBuf = directory.into();
 
@@ -108,12 +110,12 @@ pub fn create_tree(
             path = normalize_path(path.as_path());
             depth
         }
-        Some(Err(err)) => return Err(err).add_context("<input>"),
+        Some(Err(err)) => return Err(err).add_context(read_context),
         None => 0,
     };
 
     for result in lines {
-        let line = result.add_context("<input>")?;
+        let line = add_context!(result, read_context)?;
         if line.is_empty() {
             break;
         }

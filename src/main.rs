@@ -7,6 +7,7 @@ use std::path::{Path};
 use untree::*;
 
 fn main() -> PathResult<()> {
+    use PathContext::*;
     let args = Args::parse();
 
     let directory = args.dir.unwrap_or("".into());
@@ -23,7 +24,7 @@ fn main() -> PathResult<()> {
             "{}",
             format!("Reading tree from standard input").red().bold()
         );
-        create_tree(&directory, read_stdin(), options)
+        create_tree(&directory, read_stdin(), options, FromStdin)
     } else {
         Ok(for file in tree_files {
             match file.as_str() {
@@ -32,18 +33,18 @@ fn main() -> PathResult<()> {
                         "{}",
                         format!("Reading tree from standard input").red().bold()
                     );
-                    create_tree(&directory, read_stdin(), options)?;
+                    create_tree(&directory, read_stdin(), options, FromStdin)?;
                 }
                 "\\-" => {
                     eprintln!("{}", format!("Reading tree from file '-'").red().bold());
-                    create_tree(&directory, read_lines("-").add_context("-")?, options)?;
+                    create_tree(&directory, read_lines("-").add_context(Read("-"))?, options, Read("-"))?;
                 }
                 file => {
                     eprintln!(
                         "{}",
                         format!("Reading tree from file '{file}'").red().bold()
                     );
-                    create_tree(&directory, read_lines(file).add_context(file)?, options)?;
+                    create_tree(&directory, read_lines(file).add_context(Read(file))?, options, Read(file))?;
                 }
             }
         })

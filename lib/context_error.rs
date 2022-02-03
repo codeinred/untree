@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::{self, Debug, Display};
 
-use super::AddContext;
+use super::{AddContext, Collapse};
 
 #[derive(Debug)]
 pub struct ContextError<T: Debug + Display, E: Error> {
@@ -31,13 +31,13 @@ impl<E, C, T, Source> AddContext<C, Source, Result<T, ContextError<C, E>>>
 where
     C: Debug + Display,
     E: Error,
-    Source: Into<C>,
+    Source: Collapse<C>,
 {
     fn add_context(self, context: Source) -> Result<T, ContextError<C, E>> {
         match self {
             Ok(value) => Ok(value),
             Err(err) => Err(ContextError {
-                context: context.into(),
+                context: context.collapse(),
                 base_error: err,
             }),
         }
