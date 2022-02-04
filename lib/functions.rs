@@ -1,10 +1,11 @@
 use colored::*;
 use std::fs::{create_dir_all, OpenOptions};
-use std::io::{self, BufRead, ErrorKind::AlreadyExists, Lines};
+use std::io::{BufRead, ErrorKind::AlreadyExists, Lines};
 use std::iter::Iterator;
 use std::path::{Path, PathBuf};
 
-use super::{PathKind::*, *};
+use super::{PathKind::*, Error, *};
+use quick_error::ResultExt;
 
 /// Returns an entry in the tree, where the first result is the depth,
 /// and the second result is the file
@@ -31,7 +32,7 @@ pub fn get_entry(mut entry: &str) -> (i32, &str) {
 
 /// Atomically create a file, if it doesn't already exist. This is an atomic operation on the filesystem.
 /// If the file already exists, this function exits without affecting that file.
-pub fn touch_file(path: &Path) -> io::Result<()> {
+pub fn touch_file(path: &Path) -> Result<(), Error> {
     // create_new is used to implement creation + existence checking as an atomic filesystem operation.
 
     // create_new is used instead of create because the program should NOT
@@ -48,14 +49,17 @@ pub fn touch_file(path: &Path) -> io::Result<()> {
             // If the file already exists, that's fine - we don't need to take an action
             AlreadyExists => Ok(()),
             // Otherwise, we propagate the error forward
-            _ => Err(err),
+            _ => Err(err).context(path)?,
         },
     }
 }
 
-pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> PathResult<()> {
+pub fn touch_directory(path: &Path) -> Result<(), Error> {
+    Ok(create_dir_all(path).context(path)?)
+}
+
+pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> Result<(), Error> {
     let name = path.to_str().unwrap_or("<unprintable>");
-    use PathContext::*;
 
     match (options.is_verbose(), kind) {
         (false, _) => {} // Print nothing if is_verbose() is false
@@ -65,8 +69,8 @@ pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> PathR
 
     match (options.dry_run, kind) {
         (true, _) => Ok(()), // Do nothing when dry_run is true
-        (_, FilePath) => touch_file(path).add_context(CreateFile(path)),
-        (_, Directory) => create_dir_all(path).add_context(CreateDirectory(path)),
+        (_, FilePath) => touch_file(path),
+        (_, Directory) => touch_directory(path),
     }
 }
 
@@ -98,8 +102,8 @@ fn normalize_path(path: &Path) -> PathBuf {
 pub fn create_tree(
     directory: &String,
     mut lines: Lines<impl BufRead>,
-    options: UntreeOptions
-) -> PathResult<()> {
+    options: UntreeOptions,
+) -> Result<(), Error> {
     let mut path: PathBuf = directory.into();
 
     let mut old_depth = match lines.next() {
@@ -114,7 +118,7 @@ pub fn create_tree(
     };
 
     for result in lines {
-        let line = match result { Err(err) => Err(err.into()), ok => ok }?;
+        let line = result?;
         if line.is_empty() {
             break;
         }
