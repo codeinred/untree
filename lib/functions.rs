@@ -123,11 +123,11 @@ fn normalize_path(path: &Path) -> PathBuf {
 /// Create a tree based on a sequence of lines describing the tree structure.
 /// Use the given directory.
 pub fn create_tree(
-    directory: &String,
+    directory: impl Into<PathBuf>,
     mut lines: Lines<impl BufRead>,
     options: UntreeOptions,
 ) -> Result<()> {
-    let mut path: PathBuf = directory.into();
+    let mut path = directory.into();
 
     let mut old_depth = 0;
 
