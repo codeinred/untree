@@ -15,10 +15,10 @@ quick_error! {
     /// the path type.
     #[derive(Debug)]
     pub enum Error {
-        /// Context is missing. An io::Error exists, but the context associated
+        /// Context is missing. An `io::Error` exists, but the context associated
         /// with the error (where it came from) wasn't known in the current
         /// scope. This context should be provided by a calling function via
-        /// error.more_context
+        /// `error.more_context()`
         MissingContext(err : io::Error) {
             from()
         }
@@ -55,6 +55,6 @@ impl<'a> MoreContext<(&'a Path, PathAction)> for Error {
     }
 }
 
-/// untree::Result<T> is a std::result::Result<T, untree::Error>. Represents a
-/// result type in untree
+/// Result type for untree.
+/// `untree::Result<T>` is a `std::result::Result<T, untree::Error>`.
 pub type Result<T> = std::result::Result<T, Error>;

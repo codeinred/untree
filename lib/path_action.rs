@@ -1,7 +1,7 @@
 use std::{fmt, path::Path};
 
 /// Type representing the context for a error. Contains a path, together with a
-/// PathAction indicating what was going on at the time of the error
+/// `PathAction` indicating what was going on at the time of the error
 pub type PathContext<'a> = (&'a Path, PathAction);
 
 /// Represents a type of action that can happen on a path. Used to provide
@@ -22,7 +22,7 @@ pub enum PathAction {
 pub use PathAction::*;
 
 impl PathAction {
-    /// Constructs a PathContext given itself, and the given context
+    /// Constructs a `PathContext` given itself, and the given context
     pub fn on<'a>(self, path: &'a Path) -> PathContext<'a> {
         (path, self)
     }
