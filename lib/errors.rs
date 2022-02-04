@@ -1,41 +1,13 @@
 use quick_error::quick_error;
-use std::{
-    fmt, io,
-    path::{Path, PathBuf},
-};
+use std::{io, path::Path, path::PathBuf};
 
-use super::MoreContext;
+use super::*;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ReadStdinType {
     ReadStdin,
 }
 pub use ReadStdinType::ReadStdin;
-
-type PathContext<'a> = (&'a Path, PathAction);
-
-#[derive(Debug, Copy, Clone)]
-pub enum PathAction {
-    CreateFile,
-    CreateDirectory,
-    OpenFileForReading,
-    ReadFile,
-}
-
-pub use PathAction::*;
-
-impl PathAction {
-    pub fn on<'a>(self, path: &'a Path) -> PathContext<'a> {
-        (path, self)
-    }
-    pub fn describe(self, path : &impl fmt::Display) -> String {
-        match self {
-            CreateFile => format!("create file '{path}'"),
-            CreateDirectory => format!("create directory '{path}'"),
-            OpenFileForReading => format!("open '{path}' for reading"),
-            ReadFile => format!("read file '{path}'"),
-        }
-    }
-}
 
 quick_error! {
     #[derive(Debug)]
