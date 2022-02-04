@@ -7,6 +7,7 @@ pub mod context_error;
 pub mod path_context;
 pub mod collapse;
 pub mod supply_missing;
+pub mod errors;
 
 use macros::either;
 pub use types::*;
@@ -16,3 +17,4 @@ pub use context_error::*;
 pub use path_context::*;
 pub use collapse::*;
 pub use supply_missing::*;
+pub use errors::*;
