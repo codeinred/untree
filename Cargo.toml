@@ -17,3 +17,4 @@ path = "src/main.rs"
 [dependencies]
 colored = "2"
 clap = {version = "3.0.13", features = ["derive", "wrap_help"] }
+quick-error = "2"
