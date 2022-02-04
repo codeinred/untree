@@ -1,8 +1,19 @@
 [package]
-name = "untree"
-version = "0.9.4"
-edition = "2021"
 authors = ["Alecto Irene Perez <perez.cs@pm.me>"]
+description = """untree inverts the action of tree. \
+    It allows you to create directory trees from a textual \
+    representation of the tree."""
+edition = "2021"
+license = "MIT"
+name = "untree"
+version = "0.9.5"
+homepage = "https://github.com/codeinred/untree"
+repository = "https://github.com/codeinred/untree"
+readme = "README.md"
+
+# Exclude media and input files from crate
+exclude = ["media/", "inputs/"]
+
 
 [lib]
 name = "untree"
@@ -15,6 +26,6 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = { version = "3.0.13", features = ["derive", "wrap_help"] }
 colored = "2"
-clap = {version = "3.0.13", features = ["derive", "wrap_help"] }
 quick-error = "2"
