@@ -51,7 +51,8 @@ fn run() -> Result<(), Error> {
                         "{}",
                         format!("Reading tree from file '{file}'").red().bold()
                     );
-                    create_tree(&directory, read_lines(path)?, options).more_context(path)?;
+                    create_tree(&directory, read_lines(path)?, options)
+                        .more_context(ReadFile.on(path))?;
                 }
             }
         })
@@ -67,7 +68,7 @@ fn read_stdin() -> Lines<BufReader<Stdin>> {
 fn read_lines<'a>(path: &'a Path) -> Result<Lines<BufReader<File>>, untree::Error> {
     Ok(File::open(path)
         .map(|file| io::BufReader::new(file).lines())
-        .context(path)?)
+        .context(OpenFileForReading.on(path))?)
 }
 
 /// A program to instantiate directory trees from the output of tree

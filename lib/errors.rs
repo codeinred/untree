@@ -9,6 +9,24 @@ pub enum ReadStdinType {
 }
 pub use ReadStdinType::ReadStdin;
 
+type PathContext<'a> = (&'a Path, PathAction);
+
+#[derive(Debug, Copy, Clone)]
+pub enum PathAction {
+    CreateFile,
+    CreateDirectory,
+    OpenFileForReading,
+    ReadFile,
+}
+
+pub use PathAction::*;
+
+impl PathAction {
+    pub fn on<'a>(self, path: &'a Path) -> PathContext<'a> {
+        (path, self)
+    }
+}
+
 quick_error! {
     #[derive(Debug)]
     pub enum Error {
@@ -18,9 +36,9 @@ quick_error! {
         OnStdin(err : io::Error) {
 
         }
-        OnPath(filename: PathBuf, err: io::Error) {
-            context(path: &'a Path, err: io::Error)
-                -> (path.to_path_buf(), err)
+        OnPath(filename: PathBuf, action: PathAction, err: io::Error) {
+            context(info: PathContext<'a>, err: io::Error)
+                -> (info.0.to_path_buf(), info.1, err)
         }
     }
 }
@@ -35,11 +53,11 @@ impl MoreContext<ReadStdinType> for Error {
     }
 }
 
-impl<'a> MoreContext<&'a Path> for Error {
-    fn more_context(self, path: &'a Path) -> Self {
+impl<'a> MoreContext<(&'a Path, PathAction)> for Error {
+    fn more_context(self, (path, action): (&'a Path, PathAction)) -> Self {
         use Error::*;
         match self {
-            MissingContext(err) => OnPath(path.to_path_buf(), err),
+            MissingContext(err) => OnPath(path.to_path_buf(), action, err),
             err => err,
         }
     }

@@ -49,13 +49,13 @@ pub fn touch_file(path: &Path) -> Result<(), Error> {
             // If the file already exists, that's fine - we don't need to take an action
             AlreadyExists => Ok(()),
             // Otherwise, we propagate the error forward
-            _ => Err(err).context(path)?,
+            _ => Err(err).context(CreateFile.on(path))?,
         },
     }
 }
 
 pub fn touch_directory(path: &Path) -> Result<(), Error> {
-    Ok(create_dir_all(path).context(path)?)
+    Ok(create_dir_all(path).context(CreateDirectory.on(path))?)
 }
 
 pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> Result<(), Error> {
