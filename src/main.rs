@@ -9,13 +9,42 @@ use quick_error::ResultExt;
 use untree::*;
 
 fn main() {
-    match run() {
-        Err(err) => {
-            eprintln!("{err:#?}")
+    use Error::*;
+    if let Err(err) = run() {
+        let header = "Error".bold().red();
+        let prefix = "".bold().red();
+        let line = format!("{:═<80}", "").bold().red();
+
+        eprintln!();
+        eprintln!("{header}");
+        eprintln!("{line}");
+
+        match err {
+            MissingContext(err) => {
+                eprintln!("Error with unknown context. {err}")
+            }
+            OnStdin(err) => {
+                eprintln!("Error when attempting to read standard input. {err}")
+            }
+            OnPath(path, action, err) => {
+                let path = path.to_str().unwrap_or("<unspeakable path>").bold();
+                let action = match action {
+                    CreateFile => format!("create file '{path}'"),
+                    CreateDirectory => format!("create directory '{path}'"),
+                    OpenFileForReading => format!("open '{path}' for reading"),
+                    ReadFile => format!("read file '{path}'"),
+                };
+                eprintln!("{prefix}Error when attempting to {action}.");
+                eprintln!("{prefix}");
+                eprintln!("{prefix}{err}");
+                eprintln!();
+            }
         }
-        _ => {}
+
+        std::process::exit(1);
     }
 }
+
 fn run() -> Result<(), Error> {
     let args = Args::parse();
 
@@ -47,11 +76,12 @@ fn run() -> Result<(), Error> {
                 file => {
                     let file = file.strip_prefix("\\").unwrap_or(file);
                     let path = Path::new(file);
+                    let lines =  read_lines(path)?;
                     eprintln!(
                         "{}",
                         format!("Reading tree from file '{file}'").red().bold()
                     );
-                    create_tree(&directory, read_lines(path)?, options)
+                    create_tree(&directory, lines, options)
                         .more_context(ReadFile.on(path))?;
                 }
             }
