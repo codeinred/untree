@@ -9,6 +9,7 @@ name = "untree"
 version = "0.9.6"
 homepage = "https://github.com/codeinred/untree"
 repository = "https://github.com/codeinred/untree"
+documentation = "https://docs.rs/untree"
 readme = "README.md"
 
 # Exclude media and input files from crate
