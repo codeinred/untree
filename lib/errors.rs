@@ -2,7 +2,7 @@ use quick_error::quick_error;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use super::SupplyMissing;
+use super::MoreContext;
 
 pub enum ReadStdinType {
     ReadStdin,
@@ -25,8 +25,8 @@ quick_error! {
     }
 }
 
-impl SupplyMissing<ReadStdinType> for Error {
-    fn supply_missing(self, _: ReadStdinType) -> Self {
+impl MoreContext<ReadStdinType> for Error {
+    fn more_context(self, _: ReadStdinType) -> Self {
         use Error::*;
         match self {
             MissingContext(err) => OnStdin(err),
@@ -35,8 +35,8 @@ impl SupplyMissing<ReadStdinType> for Error {
     }
 }
 
-impl<'a> SupplyMissing<&'a Path> for Error {
-    fn supply_missing(self, path: &'a Path) -> Self {
+impl<'a> MoreContext<&'a Path> for Error {
+    fn more_context(self, path: &'a Path) -> Self {
         use Error::*;
         match self {
             MissingContext(err) => OnPath(path.to_path_buf(), err),

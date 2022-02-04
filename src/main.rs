@@ -33,7 +33,7 @@ fn run() -> Result<(), Error> {
             "{}",
             format!("Reading tree from standard input").red().bold()
         );
-        create_tree(&directory, read_stdin(), options).supply_missing(ReadStdin)
+        create_tree(&directory, read_stdin(), options).more_context(ReadStdin)
     } else {
         Ok(for file in tree_files {
             match file.as_str() {
@@ -42,7 +42,7 @@ fn run() -> Result<(), Error> {
                         "{}",
                         format!("Reading tree from standard input").red().bold()
                     );
-                    create_tree(&directory, read_stdin(), options).supply_missing(ReadStdin)?;
+                    create_tree(&directory, read_stdin(), options).more_context(ReadStdin)?;
                 }
                 file => {
                     let file = file.strip_prefix("\\").unwrap_or(file);
@@ -51,7 +51,7 @@ fn run() -> Result<(), Error> {
                         "{}",
                         format!("Reading tree from file '{file}'").red().bold()
                     );
-                    create_tree(&directory, read_lines(path)?, options).supply_missing(path)?;
+                    create_tree(&directory, read_lines(path)?, options).more_context(path)?;
                 }
             }
         })
