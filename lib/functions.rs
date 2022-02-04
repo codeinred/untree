@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf};
 use super::{PathKind::*, *};
 use quick_error::ResultExt;
 
-/// Returns an entry in the tree, where the first result is the depth,
-/// and the second result is the file
+/// Returns an entry in the tree, where the first result is the depth, and the
+/// second result is the file
 pub fn get_entry(mut entry: &str) -> (i32, &str) {
     let mut depth = 0;
 
