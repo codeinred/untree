@@ -1,6 +1,8 @@
 use quick_error::quick_error;
-use std::io;
-use std::path::{Path, PathBuf};
+use std::{
+    fmt, io,
+    path::{Path, PathBuf},
+};
 
 use super::MoreContext;
 
@@ -24,6 +26,14 @@ pub use PathAction::*;
 impl PathAction {
     pub fn on<'a>(self, path: &'a Path) -> PathContext<'a> {
         (path, self)
+    }
+    pub fn describe(self, path : &impl fmt::Display) -> String {
+        match self {
+            CreateFile => format!("create file '{path}'"),
+            CreateDirectory => format!("create directory '{path}'"),
+            OpenFileForReading => format!("open '{path}' for reading"),
+            ReadFile => format!("read file '{path}'"),
+        }
     }
 }
 

@@ -28,12 +28,7 @@ fn main() {
             }
             OnPath(path, action, err) => {
                 let path = path.to_str().unwrap_or("<unspeakable path>").bold();
-                let action = match action {
-                    CreateFile => format!("create file '{path}'"),
-                    CreateDirectory => format!("create directory '{path}'"),
-                    OpenFileForReading => format!("open '{path}' for reading"),
-                    ReadFile => format!("read file '{path}'"),
-                };
+                let action = action.describe(&path);
                 eprintln!("{prefix}Error when attempting to {action}.");
                 eprintln!("{prefix}");
                 eprintln!("{prefix}{err}");
