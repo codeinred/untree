@@ -62,3 +62,5 @@ impl<'a> MoreContext<(&'a Path, PathAction)> for Error {
         }
     }
 }
+
+pub type Result<T> = std::result::Result<T, Error>;

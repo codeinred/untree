@@ -4,7 +4,7 @@ use std::io::{BufRead, ErrorKind::AlreadyExists, Lines};
 use std::iter::Iterator;
 use std::path::{Path, PathBuf};
 
-use super::{Error, PathKind::*, *};
+use super::{PathKind::*, *};
 use quick_error::ResultExt;
 
 /// Returns an entry in the tree, where the first result is the depth,
@@ -32,7 +32,7 @@ pub fn get_entry(mut entry: &str) -> (i32, &str) {
 
 /// Atomically create a file, if it doesn't already exist. This is an atomic operation on the filesystem.
 /// If the file already exists, this function exits without affecting that file.
-pub fn touch_file(path: &Path) -> Result<(), Error> {
+pub fn touch_file(path: &Path) -> Result<()> {
     // create_new is used to implement creation + existence checking as an atomic filesystem operation.
 
     // create_new is used instead of create because the program should NOT
@@ -54,11 +54,11 @@ pub fn touch_file(path: &Path) -> Result<(), Error> {
     }
 }
 
-pub fn touch_directory(path: &Path) -> Result<(), Error> {
+pub fn touch_directory(path: &Path) -> Result<()> {
     Ok(create_dir_all(path).context(CreateDirectory.on(path))?)
 }
 
-pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> Result<(), Error> {
+pub fn create_path(path: &Path, kind: PathKind, options: UntreeOptions) -> Result<()> {
     let name = path.to_str().unwrap_or("<unprintable>");
 
     match (options.is_verbose(), kind) {
@@ -103,7 +103,7 @@ pub fn create_tree(
     directory: &String,
     mut lines: Lines<impl BufRead>,
     options: UntreeOptions,
-) -> Result<(), Error> {
+) -> Result<()> {
     let mut path: PathBuf = directory.into();
 
     let mut old_depth = 0;

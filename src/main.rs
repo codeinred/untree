@@ -45,7 +45,7 @@ fn main() {
     }
 }
 
-fn run() -> Result<(), Error> {
+fn run() -> Result<()> {
     let args = Args::parse();
 
     let directory = args.dir.unwrap_or("".into());
@@ -95,7 +95,7 @@ fn read_stdin() -> Lines<BufReader<Stdin>> {
 
 /// The output is wrapped in a Result to allow matching on errors
 /// Returns an Iterator to the Reader of the lines of the file.
-fn read_lines<'a>(path: &'a Path) -> Result<Lines<BufReader<File>>, untree::Error> {
+fn read_lines<'a>(path: &'a Path) -> Result<Lines<BufReader<File>>> {
     Ok(File::open(path)
         .map(|file| io::BufReader::new(file).lines())
         .context(OpenFileForReading.on(path))?)
