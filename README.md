@@ -75,6 +75,38 @@ input to other programs.
 [stack-overflow-question]:
   https://stackoverflow.com/questions/70933172/how-to-write-gitignore-so-that-it-only-includes-yaml-files-and-some-specific-fi
 
+## Using untree as a library
+
+You can use untree as a library if you need that functionality included in your
+program. In order to create a tree, invoke `untree::create_tree` with the given
+directory, `Lines` buffer, and options. These options are very simple - there's
+`UntreeOptions::verbose`, which will print out any directories or files that
+were created if true, and `UntreeOptions::dry_run`, which will print out any
+directories or files without actually creating them (`dry_run` implies
+`verbose`)
+
+For more info, [see the documentation.][untree docs]
+
+```rust
+pub fn create_tree(
+    directory: &String,
+    mut lines: Lines<impl BufRead>,
+    options: UntreeOptions,
+)
+```
+
+Additional functions, such as `untree::create_path`, `untree::get_entry` (used
+to parse a line in a tree file), `untree::touch_directory` (used to create a
+directory, returning an `untree::Error` on failure), and `untree::file` (used to
+touch a file, returning `untree::Error` on failure) are also provided.
+
+The primary error type used by untree is [`untree::Error`][untree error], which
+holds information about a path and the action being done on it, in addition to
+the normal error information provided by `io::Error`.
+
+[untree docs]: https://docs.rs/untree/latest/untree/all.html
+[untree error]: https://docs.rs/untree/latest/untree/errors/enum.Error.html
+
 ## User testimonials
 
 When asked about _untree_, my friend said:
@@ -82,9 +114,7 @@ When asked about _untree_, my friend said:
 > I retroactively want that for my time trying to get Conan to work. It woulda
 > made certain things just a little less painful.
 
-— _some guy[^1]_
-
-[^1]: _He asked to be referred to as "some guy"_
+— _some guy_ (He asked to be referred to as "some guy")
 
 ## Comments, feedback, or contributions are welcome!
 
