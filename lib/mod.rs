@@ -1,12 +1,12 @@
 pub mod either;
-pub mod traits;
-pub mod types;
+pub mod errors;
 pub mod functions;
 pub mod more_context;
-pub mod errors;
+pub mod traits;
+pub mod types;
 
 use either::either;
-pub use types::*;
+pub use errors::*;
 pub use functions::*;
 pub use more_context::*;
-pub use errors::*;
+pub use types::*;

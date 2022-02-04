@@ -4,7 +4,7 @@ use std::io::{BufRead, ErrorKind::AlreadyExists, Lines};
 use std::iter::Iterator;
 use std::path::{Path, PathBuf};
 
-use super::{PathKind::*, Error, *};
+use super::{Error, PathKind::*, *};
 use quick_error::ResultExt;
 
 /// Returns an entry in the tree, where the first result is the depth,
@@ -106,17 +106,18 @@ pub fn create_tree(
 ) -> Result<(), Error> {
     let mut path: PathBuf = directory.into();
 
-    let mut old_depth = match lines.next() {
-        Some(Ok(line)) => {
-            let (depth, filename) = get_entry(line.as_ref());
-            path.push(filename);
-            path = normalize_path(path.as_path());
-            depth
-        }
-        Some(Err(err)) => return Err(err.into()),
-        None => 0,
-    };
+    let mut old_depth = 0;
 
+    // Get the first line
+    if let Some(result) = lines.next() {
+        let line = result?;
+        let (depth, filename) = get_entry(line.as_ref());
+        path.push(filename);
+        path = normalize_path(path.as_path());
+        old_depth = depth;
+    }
+
+    // Get remaining lines
     for result in lines {
         let line = result?;
         if line.is_empty() {
@@ -135,5 +136,7 @@ pub fn create_tree(
         }
         old_depth = depth;
     }
+
+    // Create file for last line
     create_path(path.as_path(), FilePath, options)
 }
