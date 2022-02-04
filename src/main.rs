@@ -69,14 +69,17 @@ fn run() -> Result<()> {
                 "-" => {
                     eprintln!(
                         "{}",
-                        format!("Reading tree from standard input").red().bold()
+                        format!("Reading tree from standard input")
+                            .red()
+                            .bold()
                     );
-                    create_tree(&directory, read_stdin(), options).more_context(ReadStdin)?;
+                    create_tree(&directory, read_stdin(), options)
+                        .more_context(ReadStdin)?;
                 }
                 file => {
                     let file = file.strip_prefix("\\").unwrap_or(file);
                     let path = Path::new(file);
-                    let lines =  read_lines(path)?;
+                    let lines = read_lines(path)?;
                     eprintln!(
                         "{}",
                         format!("Reading tree from file '{file}'").red().bold()
@@ -105,8 +108,9 @@ fn read_lines<'a>(path: &'a Path) -> Result<Lines<BufReader<File>>> {
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
-    /// Directory to use as the root of the newly generated directory structure.
-    /// Uses current working directory if no directory is specified.
+    /// Directory to use as the root of the newly generated directory
+    /// structure. Uses current working directory if no directory is
+    /// specified.
     #[clap(short, long)]
     pub dir: Option<String>,
     /// List of files containing trees to be read by untree. If no files are
