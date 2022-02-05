@@ -5,15 +5,36 @@ use std::fmt::{self, Debug, Display};
 /// or directory. If options.dry_run is set, print out the creation of the file
 /// or directory, but don't actually create it (`options.dry_run` implies
 /// verbose)
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct UntreeOptions {
-    pub dry_run: bool,
-    pub verbose: bool,
+    pub(crate) dry_run: bool,
+    pub(crate) verbose: bool,
 }
 
 impl UntreeOptions {
-    /// Check if either `self.verbose` or `self.dry_run` is true.
-    /// If `dry_run` is true, then `verbose` should be implied as true
+    /// Create a new [`UntreeOptions`] with dry_run and verbose both set to false.
+    /// These are the defaults.
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Return a new [`UntreeOptions`] with dry_run set to the given value
+    #[must_use]
+    pub fn dry_run(self, dry_run: bool) -> UntreeOptions {
+        Self { dry_run, ..self }
+    }
+
+    /// Return a new [`UntreeOptions`] with verbose set to the given value
+    #[must_use]
+    pub fn verbose(self, verbose: bool) -> UntreeOptions {
+        Self { verbose, ..self }
+    }
+
+    /// Check whether this option specifies that untree should print out what it's doing, without actually making any files or directories
+    pub fn is_dry_run(&self) -> bool {
+        self.dry_run
+    }
+    /// Check whether untree should describe what it's doing.
     pub fn is_verbose(&self) -> bool {
         self.verbose || self.dry_run
     }

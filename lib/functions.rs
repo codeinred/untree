@@ -120,8 +120,25 @@ fn normalize_path(path: &Path) -> PathBuf {
     result
 }
 
-/// Create a tree based on a sequence of lines describing the tree structure.
-/// Use the given directory.
+/// Create a tree based on a sequence of lines describing the tree structure
+/// inside the given directory
+///
+/// **Example:**
+///
+/// ```rust
+/// use untree::*;
+/// use std::io::{BufRead, BufReader, stdin, Lines};
+///
+/// let options = UntreeOptions::new()
+///     .dry_run(true)
+///     .verbose(true);
+///
+/// let lines = BufReader::new(stdin()).lines();
+///
+/// create_tree("path/to/directory", lines, options)?;
+///
+/// # Ok::<(), Error>(())
+/// ```
 pub fn create_tree(
     directory: impl Into<PathBuf>,
     mut lines: Lines<impl BufRead>,

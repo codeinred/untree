@@ -1,36 +1,23 @@
 .
 ├── .gitattributes
 ├── .gitignore
-├── .gitignore.bak
-├── coding_init.bat
 ├── config
 │   ├── config
 │   │   └── default.yml
 │   └── match
 │       ├── base.yml
 │       └── packages
-├── init.bat
+├── init.sh
 ├── mykey
 ├── packages
-│   └── a.txt
-├── r.bat
-├── reset.bat
-├── run_github.bat
+│   └── file.txt
+├── reset.sh
+├── run_github.sh
 └── runtime
-    ├── disabledv2.ico
-    ├── espanso-daemon.lock
-    ├── espanso-worker.lock
-    ├── espanso.lock
-    ├── espanso.log
-    ├── formv2.ico
     ├── icon_no_backgroundv2.png
     ├── iconv2.png
     ├── kvs
     │   ├── has_completed_wizard
-    │   ├── has_displayed_welcome
     │   └── has_selected_auto_start_option
     ├── normalv2.ico
-    ├── search.png
-    ├── tray_explain_image.png
     └── wizardv2.ico
-

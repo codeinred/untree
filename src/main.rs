@@ -65,10 +65,9 @@ fn print_error(msg: impl std::fmt::Display, base_err: io::Error) {
 fn run(args: Args) -> Result<()> {
     let directory = args.dir.unwrap_or_else(|| "".into());
 
-    let options = UntreeOptions {
-        dry_run: args.dry_run,
-        verbose: args.verbose,
-    };
+    let options = UntreeOptions::new()
+        .dry_run(args.dry_run)
+        .verbose(args.verbose);
 
     let tree_files = &args.tree_files;
 
@@ -116,7 +115,7 @@ pub struct Args {
     /// Directory to use as the root of the newly generated directory
     /// structure. Uses current working directory if no directory is
     /// specified.
-    #[clap(short, long, parse(from_os_str))]
+    #[clap(short, long("--dir"), parse(from_os_str))]
     pub dir: Option<PathBuf>,
     /// List of files containing trees to be read by untree. If no files are
     /// specified, then the tree is read from standard input.
