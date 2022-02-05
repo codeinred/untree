@@ -34,6 +34,7 @@ build-binary = ["clap"]
 colored = "2"
 quick-error = "2"
 textwrap = "0.14"
+embed-doc-image = "0.1"
 clap = { version = "3.0.13", features = [
     "derive",
     "wrap_help",

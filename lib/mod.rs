@@ -1,3 +1,7 @@
+#![doc = ::embed_doc_image::embed_image!("image1", "media/image1.png")]
+#![doc = ::embed_doc_image::embed_image!("image2", "media/image2.png")]
+#![doc = include_str!("../README.md")]
+
 pub mod either;
 pub mod errors;
 pub mod functions;
@@ -11,3 +15,4 @@ pub use functions::*;
 pub use more_context::*;
 pub use path_action::*;
 pub use types::*;
+

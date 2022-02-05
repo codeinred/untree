@@ -6,7 +6,7 @@ Untree converts tree diagrams produced by
 Let's say you have the following directory structure, created by running `tree`
 in the root of this project:
 
-```
+```text
 .
 ├── Cargo.lock
 ├── Cargo.toml
@@ -32,7 +32,7 @@ Here, `test` is the destination directory where `untree` is supposed to create
 files. Now, if we `tree` the newly created directory, we can see that it has the
 same structure as the repository:
 
-```
+```text
 test
 ├── Cargo.lock
 ├── Cargo.toml
@@ -51,7 +51,7 @@ test
 `untree` can also read in the tree from an input file, or you can paste it in
 directly since it accepts input from standard input:
 
-![](media/image1.png)
+![][image1]
 
 ## Motivating untree
 
@@ -66,7 +66,7 @@ structure itself _is_ relevant to the question.
 `untree` allows you to exactly replicate the directory structure, just by
 pasting in the given directory tree:
 
-![](media/image2.png)
+![][image2]
 
 Aside from allowing you to answer questions about directory structures, untree
 is good for quickly creating directory structures for the purpose of mocking
@@ -120,3 +120,6 @@ When asked about _untree_, my friend said:
 
 I'm in the progress of learning rust, so any feedback you have is greatly
 appreciated! Also, if `untree` is useful to you, please let me know!
+
+[image1]: media/image1.png
+[image2]: media/image2.png
