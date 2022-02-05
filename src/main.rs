@@ -1,4 +1,3 @@
-use clap::Parser;
 use colored::*;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
@@ -6,11 +5,23 @@ use std::path::{Path, PathBuf};
 
 use quick_error::ResultExt;
 
+use clap::{AppSettings, Color, FromArgMatches, IntoApp, Parser, Style};
+
 use untree::*;
 
 fn main() {
+    let app = Args::into_app()
+        .global_setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::DisableHelpSubcommand)
+        .bold(Style::Good, true)
+        .bold(Style::Warning, true)
+        .foreground(Style::Warning, Some(Color::Green))
+        .max_term_width(100);
+
+    let args = Args::from_arg_matches(&app.get_matches()).unwrap();
+
     use Error::*;
-    if let Err(err) = run() {
+    if let Err(err) = run(args) {
         let header = "Error".bold().red();
         let prefix = "".bold().red();
         let line = format!("{:═<80}", "").bold().red();
@@ -40,9 +51,7 @@ fn main() {
     }
 }
 
-fn run() -> Result<()> {
-    let args = Args::parse();
-
+fn run(args: Args) -> Result<()> {
     let directory = args.dir.unwrap_or_else(|| "".into());
 
     let options = UntreeOptions {
@@ -53,10 +62,7 @@ fn run() -> Result<()> {
     let tree_files = &args.tree_files;
 
     if tree_files.is_empty() {
-        eprintln!(
-            "{}",
-            "Reading tree from standard input".red().bold()
-        );
+        eprintln!("{}", "Reading tree from standard input".red().bold());
         create_tree(&directory, read_stdin(), options).more_context(ReadStdin)
     } else {
         for path in tree_files {
@@ -78,7 +84,7 @@ fn run() -> Result<()> {
                 create_tree(&directory, lines, options)
                     .more_context(ReadFile.on(path))?;
             }
-        };
+        }
         Ok(())
     }
 }
