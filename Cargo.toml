@@ -38,4 +38,4 @@ embed-doc-image = "0.1"
 clap = { version = "3.0.13", features = [
     "derive",
     "wrap_help",
-], optional = true, git = "https://github.com/codeinred/clap", branch = "colors" }
+], optional = true }

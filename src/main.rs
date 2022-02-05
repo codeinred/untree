@@ -8,7 +8,7 @@ use textwrap::*;
 
 use quick_error::ResultExt;
 
-use clap::{AppSettings, Color, FromArgMatches, IntoApp, Parser, Style};
+use clap::{AppSettings, FromArgMatches, IntoApp, Parser};
 
 use untree::*;
 
@@ -17,9 +17,9 @@ fn main() {
         .global_setting(AppSettings::DeriveDisplayOrder)
         .global_setting(AppSettings::NextLineHelp)
         .setting(AppSettings::DisableHelpSubcommand)
-        .bold(Style::Good, true)
-        .bold(Style::Warning, true)
-        .foreground(Style::Warning, Some(Color::Green))
+    //     .bold(Style::Good, true)
+    //     .bold(Style::Warning, true)
+    //     .foreground(Style::Warning, Some(Color::Green))
         .max_term_width(100);
 
     let args = Args::from_arg_matches(&app.get_matches()).unwrap();
