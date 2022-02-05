@@ -23,7 +23,7 @@ pub use PathAction::*;
 
 impl PathAction {
     /// Constructs a `PathContext` given itself, and the given context
-    pub fn on<'a>(self, path: &'a Path) -> PathContext<'a> {
+    pub fn on(self, path: &'_ Path) -> PathContext<'_> {
         (path, self)
     }
     /// Describes a path in terms of the action that was occuring on the path

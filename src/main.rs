@@ -2,7 +2,7 @@ use clap::Parser;
 use colored::*;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use quick_error::ResultExt;
 
@@ -43,7 +43,7 @@ fn main() {
 fn run() -> Result<()> {
     let args = Args::parse();
 
-    let directory = args.dir.unwrap_or("".into());
+    let directory = args.dir.unwrap_or_else(|| "".into());
 
     let options = UntreeOptions {
         dry_run: args.dry_run,
@@ -52,38 +52,34 @@ fn run() -> Result<()> {
 
     let tree_files = &args.tree_files;
 
-    if tree_files.len() == 0 {
+    if tree_files.is_empty() {
         eprintln!(
             "{}",
-            format!("Reading tree from standard input").red().bold()
+            "Reading tree from standard input".red().bold()
         );
         create_tree(&directory, read_stdin(), options).more_context(ReadStdin)
     } else {
-        Ok(for file in tree_files {
-            match file.as_str() {
-                "-" => {
-                    eprintln!(
-                        "{}",
-                        format!("Reading tree from standard input")
-                            .red()
-                            .bold()
-                    );
-                    create_tree(&directory, read_stdin(), options)
-                        .more_context(ReadStdin)?;
-                }
-                file => {
-                    let file = file.strip_prefix("\\").unwrap_or(file);
-                    let path = Path::new(file);
-                    let lines = read_lines(path)?;
-                    eprintln!(
-                        "{}",
-                        format!("Reading tree from file '{file}'").red().bold()
-                    );
-                    create_tree(&directory, lines, options)
-                        .more_context(ReadFile.on(path))?;
-                }
+        for path in tree_files {
+            let filename = path.to_str().unwrap_or("<unspeakable>");
+            if filename == "-" {
+                eprintln!(
+                    "{}",
+                    "Reading tree from standard input".red().bold()
+                );
+                create_tree(&directory, read_stdin(), options)
+                    .more_context(ReadStdin)?;
+            } else {
+                let path = path.strip_prefix("\\").unwrap_or(path);
+                let lines = read_lines(path)?;
+                eprintln!(
+                    "{}",
+                    format!("Reading tree from file '{filename}'").red().bold()
+                );
+                create_tree(&directory, lines, options)
+                    .more_context(ReadFile.on(path))?;
             }
-        })
+        };
+        Ok(())
     }
 }
 
@@ -93,7 +89,7 @@ fn read_stdin() -> Lines<BufReader<Stdin>> {
 
 /// The output is wrapped in a Result to allow matching on errors
 /// Returns an Iterator to the Reader of the lines of the file.
-fn read_lines<'a>(path: &'a Path) -> Result<Lines<BufReader<File>>> {
+fn read_lines(path: &'_ Path) -> Result<Lines<BufReader<File>>> {
     Ok(File::open(path)
         .map(|file| io::BufReader::new(file).lines())
         .context(OpenFileForReading.on(path))?)
@@ -106,11 +102,12 @@ pub struct Args {
     /// Directory to use as the root of the newly generated directory
     /// structure. Uses current working directory if no directory is
     /// specified.
-    #[clap(short, long)]
-    pub dir: Option<String>,
+    #[clap(short, long, parse(from_os_str))]
+    pub dir: Option<PathBuf>,
     /// List of files containing trees to be read by untree. If no files are
     /// specified, then the tree is read from standard input.
-    pub tree_files: Vec<String>,
+    #[clap(parse(from_os_str))]
+    pub tree_files: Vec<PathBuf>,
 
     /// Print the names of files and directories without creating them.
     /// Implies verbose.
