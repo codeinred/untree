@@ -24,12 +24,12 @@ path = "lib/mod.rs"
 name = "untree"
 path = "src/main.rs"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+colored = "2"
+quick-error = "2"
+textwrap = "0.14"
 clap = { version = "3.0.13", features = [
     "derive",
     "wrap_help",
 ], git = "https://github.com/codeinred/clap", branch="colors" }
-colored = "2"
-quick-error = "2"

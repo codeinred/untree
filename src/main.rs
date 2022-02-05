@@ -2,6 +2,7 @@ use colored::*;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines, Stdin};
 use std::path::{Path, PathBuf};
+use textwrap::*;
 
 use quick_error::ResultExt;
 
@@ -12,6 +13,7 @@ use untree::*;
 fn main() {
     let app = Args::into_app()
         .global_setting(AppSettings::DeriveDisplayOrder)
+        .global_setting(AppSettings::NextLineHelp)
         .setting(AppSettings::DisableHelpSubcommand)
         .bold(Style::Good, true)
         .bold(Style::Warning, true)
@@ -22,33 +24,40 @@ fn main() {
 
     use Error::*;
     if let Err(err) = run(args) {
-        let header = "Error".bold().red();
-        let prefix = "".bold().red();
-        let line = format!("{:═<80}", "").bold().red();
-
-        eprintln!();
-        eprintln!("{header}");
-        eprintln!("{line}");
-
         match err {
             MissingContext(err) => {
-                eprintln!("Error with unknown context. {err}")
+                print_error("An error occured with unknown context.", err);
             }
             OnStdin(err) => {
-                eprintln!("Error when attempting to read standard input. {err}")
+                print_error("An error occured while attempting to read from standard input.", err);
             }
             OnPath(path, action, err) => {
-                let path = path.to_str().unwrap_or("<unspeakable path>").bold();
+                let path = path.to_str().unwrap_or("<unspeakable>").bold();
                 let action = action.describe(&path);
-                eprintln!("{prefix}Error when attempting to {action}.");
-                eprintln!("{prefix}");
-                eprintln!("{prefix}{err}");
-                eprintln!();
+                print_error(
+                    format!("An error occured while attempting to {action}."),
+                    err,
+                );
             }
         }
 
         std::process::exit(1);
     }
+}
+
+fn print_error(msg: impl std::fmt::Display, base_err: io::Error) {
+    let msg = format!("{msg}\n\nCause: {base_err}");
+    let width = termwidth();
+
+    let msg = fill(msg.as_str(), width - 4);
+    let msg = indent(msg.as_str(), "    ");
+
+    let header = "ERROR:".bold().red();
+
+    eprintln!();
+    eprintln!("{header}");
+    eprintln!("{}", msg);
+    eprintln!();
 }
 
 fn run(args: Args) -> Result<()> {
@@ -62,16 +71,13 @@ fn run(args: Args) -> Result<()> {
     let tree_files = &args.tree_files;
 
     if tree_files.is_empty() {
-        eprintln!("{}", "Reading tree from standard input".red().bold());
+        eprintln!("{}", "Reading tree from standard input".bold());
         create_tree(&directory, read_stdin(), options).more_context(ReadStdin)
     } else {
         for path in tree_files {
             let filename = path.to_str().unwrap_or("<unspeakable>");
             if filename == "-" {
-                eprintln!(
-                    "{}",
-                    "Reading tree from standard input".red().bold()
-                );
+                eprintln!("{}", "Reading tree from standard input".bold());
                 create_tree(&directory, read_stdin(), options)
                     .more_context(ReadStdin)?;
             } else {
@@ -79,7 +85,7 @@ fn run(args: Args) -> Result<()> {
                 let lines = read_lines(path)?;
                 eprintln!(
                     "{}",
-                    format!("Reading tree from file '{filename}'").red().bold()
+                    format!("Reading tree from file '{filename}'").bold()
                 );
                 create_tree(&directory, lines, options)
                     .more_context(ReadFile.on(path))?;
