@@ -13,7 +13,7 @@ documentation = "https://docs.rs/untree"
 readme = "README.md"
 
 # Exclude media and input files from crate
-exclude = ["media/", "inputs/"]
+exclude = ["inputs/"]
 
 
 [lib]

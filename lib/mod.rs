@@ -1,5 +1,4 @@
 #![doc = ::embed_doc_image::embed_image!("image1", "media/image1.png")]
-#![doc = ::embed_doc_image::embed_image!("image2", "media/image2.png")]
 #![doc = include_str!("../README.md")]
 
 pub mod either;
