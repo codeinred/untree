@@ -43,7 +43,7 @@ fn main() {
 fn run() -> Result<()> {
     let args = Args::parse();
 
-    let directory = args.dir.unwrap_or("".into());
+    let directory = args.dir.unwrap_or_else(|| "".into());
 
     let options = UntreeOptions {
         dry_run: args.dry_run,
@@ -52,19 +52,19 @@ fn run() -> Result<()> {
 
     let tree_files = &args.tree_files;
 
-    if tree_files.len() == 0 {
+    if tree_files.is_empty() {
         eprintln!(
             "{}",
-            format!("Reading tree from standard input").red().bold()
+            "Reading tree from standard input".red().bold()
         );
         create_tree(&directory, read_stdin(), options).more_context(ReadStdin)
     } else {
-        Ok(for path in tree_files {
+        for path in tree_files {
             let filename = path.to_str().unwrap_or("<unspeakable>");
             if filename == "-" {
                 eprintln!(
                     "{}",
-                    format!("Reading tree from standard input").red().bold()
+                    "Reading tree from standard input".red().bold()
                 );
                 create_tree(&directory, read_stdin(), options)
                     .more_context(ReadStdin)?;
@@ -78,7 +78,8 @@ fn run() -> Result<()> {
                 create_tree(&directory, lines, options)
                     .more_context(ReadFile.on(path))?;
             }
-        })
+        };
+        Ok(())
     }
 }
 
@@ -88,7 +89,7 @@ fn read_stdin() -> Lines<BufReader<Stdin>> {
 
 /// The output is wrapped in a Result to allow matching on errors
 /// Returns an Iterator to the Reader of the lines of the file.
-fn read_lines<'a>(path: &'a Path) -> Result<Lines<BufReader<File>>> {
+fn read_lines(path: &'_ Path) -> Result<Lines<BufReader<File>>> {
     Ok(File::open(path)
         .map(|file| io::BufReader::new(file).lines())
         .context(OpenFileForReading.on(path))?)
