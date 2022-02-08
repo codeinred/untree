@@ -184,12 +184,14 @@ pub fn create_tree(
     create_path(path.as_path(), FilePath, options)
 }
 
-pub fn iter_tree<BR>(
+pub fn iter_tree<BR, F, T>(
     directory: impl Into<PathBuf>,
     mut lines: Lines<BR>,
-) -> impl Iterator
+    func: F,
+) -> impl Iterator<Item = T>
 where
     BR: BufRead,
+    F: FnMut(Result<(&Path, PathKind)>) -> T,
 {
     enum State {
         Good,
@@ -197,16 +199,23 @@ where
         Bad(Error),
     }
     use State::*;
-    struct It<BR> {
+    struct It<BR, F, T>
+    where
+        F: FnMut(Result<(&Path, PathKind)>) -> T,
+    {
         lines: Lines<BR>,
         state: State,
         path: PathBuf,
         depth: i32,
         old_depth: i32,
         filename: String,
+        func: F,
     }
-    impl<BR: BufRead> Iterator for It<BR> {
-        type Item = Result<(PathBuf, PathKind)>;
+    impl<BR: BufRead, F, T> Iterator for It<BR, F, T>
+    where
+        F: FnMut(Result<(&Path, PathKind)>) -> T,
+    {
+        type Item = T;
 
         fn next(&mut self) -> Option<Self::Item> {
             match &self.state {
@@ -214,7 +223,7 @@ where
                 Empty => return None,
                 Bad(_) => {
                     if let Bad(err) = replace(&mut self.state, Empty) {
-                        return Some(Err(err));
+                        return Some((self.func)(Err(err)));
                     } else {
                         unreachable!()
                     }
@@ -233,8 +242,8 @@ where
                 Some(Ok(line)) => {
                     if line.is_empty() {
                         self.state = Empty;
-                        let result = (self.path.clone(), FilePath);
-                        return Some(Ok(result));
+                        let result = (self.path.as_path(), FilePath);
+                        return Some((self.func)(Ok(result)));
                     }
                     let (new_depth, filename) = get_entry(line.as_ref());
                     let kind = if new_depth <= self.depth {
@@ -244,18 +253,18 @@ where
                     };
                     self.depth = new_depth;
                     self.filename = filename.into();
-                    let result = (self.path.clone(), kind);
-                    Some(Ok(result))
+                    let result = (self.path.as_path(), kind);
+                    Some((self.func)(Ok(result)))
                 }
                 Some(Err(err)) => {
                     self.state = Bad(err.into());
-                    let result = (self.path.clone(), FilePath);
-                    Some(Ok(result))
+                    let result = (self.path.as_path(), FilePath);
+                    Some((self.func)(Ok(result)))
                 }
                 None => {
                     self.state = Empty;
-                    let result = (self.path.clone(), FilePath);
-                    Some(Ok(result))
+                    let result = (self.path.as_path(), FilePath);
+                    Some((self.func)(Ok(result)))
                 }
             }
         }
@@ -263,35 +272,38 @@ where
     match lines.next() {
         Some(Ok(line)) => {
             let (depth, filename) = get_entry(line.as_ref());
-            let result: It<BR> = It {
+            let result: It<BR, F, T> = It {
                 lines: lines,
                 state: Good,
                 path: directory.into(),
                 depth: depth,
-                old_depth: 0,
+                old_depth: -1,
                 filename: filename.into(),
+                func,
             };
             return result;
         }
         Some(Err(err)) => {
-            let result: It<BR> = It {
+            let result: It<BR, F, T> = It {
                 lines: lines,
                 state: Bad(err.into()),
                 path: directory.into(),
                 depth: 0,
-                old_depth: 0,
+                old_depth: -1,
                 filename: String::new(),
+                func,
             };
             return result;
         }
         None => {
-            let result: It<BR> = It {
+            let result: It<BR, F, T> = It {
                 lines: lines,
                 state: Empty,
                 path: PathBuf::new(),
                 depth: 0,
-                old_depth: 0,
+                old_depth: -1,
                 filename: String::new(),
+                func,
             };
             return result;
         }
