@@ -25,6 +25,10 @@ name = "untree"
 path = "src/main.rs"
 required-features = ["build-binary"]
 
+[[example]]
+name = "iter_tree"
+path = "example/iter_tree.rs"
+
 # Building the binary requires clap
 [features]
 default = ["build-binary"]
