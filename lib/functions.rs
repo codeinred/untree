@@ -208,7 +208,7 @@ where
         path: PathBuf,
         depth: i32,
         old_depth: i32,
-        filename: String,
+        filename: PathBuf,
         func: F,
     }
     impl<BR: BufRead, F, T> Iterator for It<BR, F, T>
@@ -233,9 +233,9 @@ where
                 for _ in self.depth..self.old_depth {
                     self.path.pop();
                 }
-                self.path.set_file_name(self.filename.as_str());
+                self.path.set_file_name(&self.filename);
             } else {
-                self.path.push(self.filename.as_str());
+                self.path.push(&self.filename);
             }
             self.old_depth = self.depth;
             match self.lines.next() {
@@ -278,7 +278,7 @@ where
                 path: directory.into(),
                 depth: depth,
                 old_depth: -1,
-                filename: filename.into(),
+                filename: normalize_path(filename.as_ref()),
                 func,
             };
             return result;
@@ -290,7 +290,7 @@ where
                 path: directory.into(),
                 depth: 0,
                 old_depth: -1,
-                filename: String::new(),
+                filename: PathBuf::new(),
                 func,
             };
             return result;
@@ -302,7 +302,7 @@ where
                 path: PathBuf::new(),
                 depth: 0,
                 old_depth: -1,
-                filename: String::new(),
+                filename: PathBuf::new(),
                 func,
             };
             return result;
