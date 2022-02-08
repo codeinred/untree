@@ -142,46 +142,13 @@ fn normalize_path(path: &Path) -> PathBuf {
 /// ```
 pub fn create_tree(
     directory: impl Into<PathBuf>,
-    mut lines: Lines<impl BufRead>,
+    lines: Lines<impl BufRead>,
     options: UntreeOptions,
 ) -> Result<()> {
-    let mut path = directory.into();
-
-    let mut old_depth;
-
-    // Get the first line
-    if let Some(result) = lines.next() {
-        let line = result?;
-        let (depth, filename) = get_entry(line.as_ref());
-        path.push(filename);
-        path = normalize_path(path.as_path());
-        old_depth = depth;
-    } else {
-        return Ok(());
-    }
-
-    // Get remaining lines
-    for result in lines {
-        let line = result?;
-        if line.is_empty() {
-            break;
-        }
-        let (depth, filename) = get_entry(line.as_ref());
-        if depth <= old_depth {
-            create_path(path.as_path(), FilePath, options)?;
-            for _ in depth..old_depth {
-                path.pop();
-            }
-            path.set_file_name(filename);
-        } else {
-            create_path(path.as_path(), Directory, options)?;
-            path.push(filename);
-        }
-        old_depth = depth;
-    }
-
-    // Create file for last line
-    create_path(path.as_path(), FilePath, options)
+    iter_tree(directory, lines, |result| match result {
+        Ok((path, kind)) => create_path(path, kind, options),
+        Err(err) => Err(err),
+    }).collect()
 }
 
 pub fn iter_tree<BR, F, T>(
