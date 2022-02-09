@@ -29,7 +29,7 @@ quick_error! {
         }
         /// Error generated while doing some action on the given path
         OnPath(filename: PathBuf, action: PathAction, err: io::Error) {
-            context(info: PathContext<'a>, err: io::Error)
+            context(info: PathContext<'_>, err: io::Error)
                 -> (info.0.to_path_buf(), info.1, err)
         }
     }

@@ -34,7 +34,7 @@ pub fn get_entry(mut entry: &str) -> (i32, &str) {
 /// Atomically create a file, if it doesn't already exist. This is an atomic
 /// operation on the filesystem. If the file already exists, this function exits
 /// without affecting that file.
-pub fn touch_file(path: &Path) -> Result<()> {
+pub fn touch_file(path: impl AsRef<Path>) -> Result<()> {
     // create_new is used to implement creation + existence checking as an
     // atomic filesystem operation.
 
@@ -47,6 +47,7 @@ pub fn touch_file(path: &Path) -> Result<()> {
     // write-accessible. Otherwise a permissions error is thrown.
 
     // See https://doc.rust-lang.org/std/fs/struct.OpenOptions.html#method.create for more details
+    let path = path.as_ref();
     match OpenOptions::new().write(true).create_new(true).open(path) {
         Ok(_) => Ok(()),
         Err(err) => match err.kind() {
@@ -60,8 +61,9 @@ pub fn touch_file(path: &Path) -> Result<()> {
 }
 
 /// Create a directory, along with any parents that haven't been created
-pub fn touch_directory(path: &Path) -> Result<()> {
-    Ok(create_dir_all(path).context(CreateDirectory.on(path))?)
+pub fn touch_directory(path: impl AsRef<Path>) -> Result<()> {
+    Ok(create_dir_all(path.as_ref())
+        .context(CreateDirectory.on(path.as_ref()))?)
 }
 
 /// Create either a file (for `kind == PathKind::File`) or a directory (for
@@ -73,10 +75,11 @@ pub fn touch_directory(path: &Path) -> Result<()> {
 /// or directory, but don't actually create it (`options.dry_run` implies
 /// verbose)
 pub fn create_path(
-    path: &Path,
+    path: impl AsRef<Path>,
     kind: PathKind,
     options: UntreeOptions,
 ) -> Result<()> {
+    let path = path.as_ref();
     let name = path.to_str().unwrap_or("<unprintable>");
 
     match (options.is_verbose(), kind) {
@@ -124,6 +127,11 @@ fn normalize_path(path: &Path) -> PathBuf {
 /// Create a tree based on a sequence of lines describing the tree structure
 /// inside the given directory
 ///
+/// - `directory` - the directory in which to place the root of the tree
+/// - `lines` - the source from which to read the tree
+/// - `options` - options such as, whether to do a dry run, or whether to print
+///    out what create_tree is doing
+///
 /// **Example:**
 ///
 /// ```rust
@@ -141,18 +149,19 @@ fn normalize_path(path: &Path) -> PathBuf {
 /// # Ok::<(), Error>(())
 /// ```
 pub fn create_tree(
-    directory: impl Into<PathBuf>,
+    directory: impl AsRef<Path>,
     lines: Lines<impl BufRead>,
     options: UntreeOptions,
 ) -> Result<()> {
     iter_tree(directory, lines, |result| match result {
         Ok((path, kind)) => create_path(path, kind, options),
         Err(err) => Err(err),
-    }).collect()
+    })
+    .collect()
 }
 
 pub fn iter_tree<BR, F, T>(
-    directory: impl Into<PathBuf>,
+    directory: impl AsRef<Path>,
     mut lines: Lines<BR>,
     func: F,
 ) -> impl Iterator<Item = T>
@@ -242,7 +251,7 @@ where
             let result: It<BR, F, T> = It {
                 lines: lines,
                 state: Good,
-                path: directory.into(),
+                path: directory.as_ref().into(),
                 depth: depth,
                 old_depth: -1,
                 filename: normalize_path(filename.as_ref()),
@@ -254,7 +263,7 @@ where
             let result: It<BR, F, T> = It {
                 lines: lines,
                 state: Bad(err.into()),
-                path: directory.into(),
+                path: directory.as_ref().into(),
                 depth: 0,
                 old_depth: -1,
                 filename: PathBuf::new(),
