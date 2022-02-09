@@ -169,23 +169,98 @@ where
     BR: BufRead,
     F: FnMut(Result<(&Path, PathKind)>) -> T,
 {
-    enum State {
-        Good,
-        Empty,
-        Bad(Error),
-    }
-    use State::*;
-    struct It<BR, F, T>
+    enum It<BR, F, T>
     where
         F: FnMut(Result<(&Path, PathKind)>) -> T,
     {
-        lines: Lines<BR>,
-        state: State,
-        path: PathBuf,
-        depth: i32,
-        old_depth: i32,
-        filename: PathBuf,
-        func: F,
+        Good {
+            lines: Lines<BR>,
+            path: PathBuf,
+            depth: i32,
+            old_depth: i32,
+            filename: PathBuf,
+            func: F,
+        },
+        Bad {
+            func: F,
+            error: Error,
+        },
+        Empty,
+    }
+    use It::*;
+
+    impl<BR: BufRead, F, T> It<BR, F, T>
+    where
+        F: FnMut(Result<(&Path, PathKind)>) -> T,
+    {
+        fn step(self) -> (Self, Option<T>) {
+            match self {
+                Empty => (Empty, None),
+                Bad { mut func, error } => {
+                    return (Empty, Some(func(Err(error))))
+                }
+                Good {
+                    mut lines,
+                    mut path,
+                    mut depth,
+                    mut old_depth,
+                    mut filename,
+                    mut func,
+                } => {
+                    if depth <= old_depth {
+                        for _ in depth..old_depth {
+                            path.pop();
+                        }
+                        path.set_file_name(&filename);
+                    } else {
+                        path.push(&filename);
+                    }
+                    old_depth = depth;
+                    match lines.next() {
+                        Some(Ok(line)) => {
+                            if line.is_empty() {
+                                let result = (path.as_path(), FilePath);
+                                return (Empty, Some((func)(Ok(result))));
+                            }
+                            let (new_depth, name) = get_entry(line.as_ref());
+                            let kind = if new_depth <= depth {
+                                FilePath
+                            } else {
+                                Directory
+                            };
+                            depth = new_depth;
+                            filename = name.into();
+                            let result = func(Ok((path.as_path(), kind)));
+                            (
+                                Good {
+                                    lines,
+                                    path,
+                                    depth,
+                                    old_depth,
+                                    filename,
+                                    func,
+                                },
+                                Some(result),
+                            )
+                        }
+                        Some(Err(err)) => {
+                            let result = func(Ok((path.as_path(), FilePath)));
+                            (
+                                Bad {
+                                    func: func,
+                                    error: err.into(),
+                                },
+                                Some(result),
+                            )
+                        }
+                        None => {
+                            let result = (path.as_path(), FilePath);
+                            (Empty, Some((func)(Ok(result))))
+                        }
+                    }
+                }
+            }
+        }
     }
     impl<BR: BufRead, F, T> Iterator for It<BR, F, T>
     where
@@ -194,94 +269,31 @@ where
         type Item = T;
 
         fn next(&mut self) -> Option<Self::Item> {
-            match &self.state {
-                Good => {}
-                Empty => return None,
-                Bad(_) => {
-                    if let Bad(err) = replace(&mut self.state, Empty) {
-                        return Some((self.func)(Err(err)));
-                    } else {
-                        unreachable!()
-                    }
-                }
-            }
-            if self.depth <= self.old_depth {
-                for _ in self.depth..self.old_depth {
-                    self.path.pop();
-                }
-                self.path.set_file_name(&self.filename);
-            } else {
-                self.path.push(&self.filename);
-            }
-            self.old_depth = self.depth;
-            match self.lines.next() {
-                Some(Ok(line)) => {
-                    if line.is_empty() {
-                        self.state = Empty;
-                        let result = (self.path.as_path(), FilePath);
-                        return Some((self.func)(Ok(result)));
-                    }
-                    let (new_depth, filename) = get_entry(line.as_ref());
-                    let kind = if new_depth <= self.depth {
-                        FilePath
-                    } else {
-                        Directory
-                    };
-                    self.depth = new_depth;
-                    self.filename = filename.into();
-                    let result = (self.path.as_path(), kind);
-                    Some((self.func)(Ok(result)))
-                }
-                Some(Err(err)) => {
-                    self.state = Bad(err.into());
-                    let result = (self.path.as_path(), FilePath);
-                    Some((self.func)(Ok(result)))
-                }
-                None => {
-                    self.state = Empty;
-                    let result = (self.path.as_path(), FilePath);
-                    Some((self.func)(Ok(result)))
-                }
-            }
+            let (val, result) = replace(self, Empty).step();
+            *self = val;
+            result
         }
     }
     match lines.next() {
         Some(Ok(line)) => {
             let (depth, filename) = get_entry(line.as_ref());
-            let result: It<BR, F, T> = It {
+            return Good {
                 lines: lines,
-                state: Good,
                 path: directory.as_ref().into(),
                 depth: depth,
                 old_depth: -1,
                 filename: normalize_path(filename.as_ref()),
                 func,
             };
-            return result;
         }
         Some(Err(err)) => {
-            let result: It<BR, F, T> = It {
-                lines: lines,
-                state: Bad(err.into()),
-                path: directory.as_ref().into(),
-                depth: 0,
-                old_depth: -1,
-                filename: PathBuf::new(),
-                func,
+            return Bad {
+                func: func,
+                error: err.into(),
             };
-            return result;
         }
         None => {
-            let result: It<BR, F, T> = It {
-                lines: lines,
-                state: Empty,
-                path: PathBuf::new(),
-                depth: 0,
-                old_depth: -1,
-                filename: PathBuf::new(),
-                func,
-            };
-            return result;
+            return Empty;
         }
     }
 }
