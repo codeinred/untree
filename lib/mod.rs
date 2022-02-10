@@ -6,6 +6,7 @@ mod errors;
 mod functions;
 mod more_context;
 mod path_action;
+mod state;
 mod tree_iterator;
 mod types;
 
@@ -14,5 +15,7 @@ pub use errors::*;
 pub use functions::*;
 pub use more_context::*;
 pub use path_action::*;
-pub(crate) use tree_iterator::*;
 pub use types::*;
+
+pub(crate) use state::*;
+pub(crate) use tree_iterator::*;

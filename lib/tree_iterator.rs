@@ -1,6 +1,5 @@
 use super::{PathKind::*, *};
 use std::io::{BufRead, Lines};
-use std::mem::replace;
 use std::path::{Path, PathBuf};
 
 pub(crate) enum TreeIterator<BR, F, T>
@@ -22,10 +21,11 @@ where
     Empty,
 }
 
-impl<BR: BufRead, F, T> TreeIterator<BR, F, T>
+impl<BR: BufRead, F, T> StateMachine for TreeIterator<BR, F, T>
 where
     F: FnMut(Result<(&Path, PathKind)>) -> T,
 {
+    type Item = T;
     fn step(self) -> (Self, Option<T>) {
         use TreeIterator::*;
         match self {
@@ -39,7 +39,6 @@ where
                 mut filename,
                 mut func,
             } => {
-                let f = &mut func;
                 if depth <= old_depth {
                     for _ in depth..old_depth {
                         path.pop();
@@ -53,7 +52,7 @@ where
                     Some(Ok(line)) => {
                         if line.is_empty() {
                             let result = (path.as_path(), FilePath);
-                            return (Empty, Some(f(Ok(result))));
+                            return (Empty, Some(func(Ok(result))));
                         }
                         let (new_depth, name) = get_entry(line.as_ref());
                         let kind = if new_depth <= depth {
@@ -63,7 +62,7 @@ where
                         };
                         depth = new_depth;
                         filename = name.into();
-                        let result = f(Ok((path.as_path(), kind)));
+                        let result = func(Ok((path.as_path(), kind)));
                         (
                             Good {
                                 lines,
@@ -77,7 +76,7 @@ where
                         )
                     }
                     Some(Err(err)) => {
-                        let result = f(Ok((path.as_path(), FilePath)));
+                        let result = func(Ok((path.as_path(), FilePath)));
                         (
                             Bad {
                                 func,
@@ -88,7 +87,7 @@ where
                     }
                     None => {
                         let result = (path.as_path(), FilePath);
-                        (Empty, Some(f(Ok(result))))
+                        (Empty, Some(func(Ok(result))))
                     }
                 }
             }
@@ -98,13 +97,11 @@ where
 impl<BR: BufRead, F, T> Iterator for TreeIterator<BR, F, T>
 where
     F: FnMut(Result<(&Path, PathKind)>) -> T,
+    TreeIterator<BR, F, T>: StateMachine<Item = T>,
 {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        use TreeIterator::Empty;
-        let (val, result) = replace(self, Empty).step();
-        *self = val;
-        result
+        StateMachine::step_mut(self)
     }
 }
