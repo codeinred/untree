@@ -30,7 +30,7 @@ where
         use TreeIterator::*;
         match self {
             Empty => (Empty, None),
-            Bad { mut func, error } => return (Empty, Some(func(Err(error)))),
+            Bad { mut func, error } => (Empty, Some(func(Err(error)))),
             Good {
                 mut lines,
                 mut path,
@@ -39,6 +39,7 @@ where
                 mut filename,
                 mut func,
             } => {
+                let f = &mut func;
                 if depth <= old_depth {
                     for _ in depth..old_depth {
                         path.pop();
@@ -52,7 +53,7 @@ where
                     Some(Ok(line)) => {
                         if line.is_empty() {
                             let result = (path.as_path(), FilePath);
-                            return (Empty, Some((func)(Ok(result))));
+                            return (Empty, Some(f(Ok(result))));
                         }
                         let (new_depth, name) = get_entry(line.as_ref());
                         let kind = if new_depth <= depth {
@@ -62,7 +63,7 @@ where
                         };
                         depth = new_depth;
                         filename = name.into();
-                        let result = func(Ok((path.as_path(), kind)));
+                        let result = f(Ok((path.as_path(), kind)));
                         (
                             Good {
                                 lines,
@@ -76,10 +77,10 @@ where
                         )
                     }
                     Some(Err(err)) => {
-                        let result = func(Ok((path.as_path(), FilePath)));
+                        let result = f(Ok((path.as_path(), FilePath)));
                         (
                             Bad {
-                                func: func,
+                                func,
                                 error: err.into(),
                             },
                             Some(result),
@@ -87,7 +88,7 @@ where
                     }
                     None => {
                         let result = (path.as_path(), FilePath);
-                        (Empty, Some((func)(Ok(result))))
+                        (Empty, Some(f(Ok(result))))
                     }
                 }
             }

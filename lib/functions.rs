@@ -173,23 +173,19 @@ where
     match lines.next() {
         Some(Ok(line)) => {
             let (depth, filename) = get_entry(line.as_ref());
-            return Good {
-                lines: lines,
+            Good {
+                lines,
                 path: directory.as_ref().into(),
-                depth: depth,
+                depth,
                 old_depth: -1,
                 filename: normalize_path(filename.as_ref()),
                 func,
-            };
+            }
         }
-        Some(Err(err)) => {
-            return Bad {
-                func: func,
-                error: err.into(),
-            };
-        }
-        None => {
-            return Empty;
-        }
+        Some(Err(err)) => Bad {
+            func,
+            error: err.into(),
+        },
+        None => Empty,
     }
 }
