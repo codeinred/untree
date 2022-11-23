@@ -6,7 +6,7 @@ description = """untree inverts the action of tree. \
 edition = "2021"
 license = "MIT"
 name = "untree"
-version = "0.9.9"
+version = "0.9.10"
 homepage = "https://github.com/codeinred/untree"
 repository = "https://github.com/codeinred/untree"
 documentation = "https://docs.rs/untree"
@@ -33,7 +33,7 @@ build-binary = ["clap"]
 [dependencies]
 colored = "2"
 quick-error = "2"
-textwrap = "0.14"
+textwrap = { version = "0.16", features = ["terminal_size"] }
 embed-doc-image = "0.1"
 clap = { version = "3.0.13", features = [
     "derive",
