@@ -1,3 +1,4 @@
+
 [package]
 authors = ["Alecto Irene Perez <perez.cs@pm.me>"]
 description = """untree inverts the action of tree. \
@@ -15,6 +16,8 @@ readme = "README.md"
 # Exclude media and input files from crate
 exclude = ["inputs/"]
 
+
+allow-dirty = true
 
 [lib]
 name = "untree"
