@@ -39,3 +39,8 @@ clap = { version = "3.0.13", features = [
     "derive",
     "wrap_help",
 ], optional = true }
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
